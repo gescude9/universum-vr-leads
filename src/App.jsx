@@ -27,8 +27,8 @@ export default function App() {
   const [dataReady, setDataReady] = useState(false)
 
   const [view, setView] = useState('dashboard')
-  const [leadModal, setLeadModal] = useState(null) // { lead, preset } | null
-  const [vendModal, setVendModal] = useState(null) // { vendedor } | null
+  const [leadModal, setLeadModal] = useState(null)
+  const [vendModal, setVendModal] = useState(null)
   const [saving, setSaving] = useState(false)
 
   const [toast, setToast] = useState({ msg: '', type: 'ok', show: false })
@@ -54,7 +54,7 @@ export default function App() {
     return () => sub.subscription.unsubscribe()
   }, [])
 
-  // ---------- Carga de datos ----------
+  // ---------- Carga de datos + Realtime ----------
   useEffect(() => {
     if (!session) return
     let activo = true
@@ -70,7 +70,20 @@ export default function App() {
         if (activo) setDataReady(true)
       }
     })()
-    return () => { activo = false }
+
+    // Realtime: escucha cambios en tiempo real de cualquier usuario
+    const channel = supabase
+      .channel('universum-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' },
+        () => { getLeads().then(l => setLeads(l)) })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendedores' },
+        () => { getVendedores().then(v => setVendedores(v)) })
+      .subscribe()
+
+    return () => {
+      activo = false
+      supabase.removeChannel(channel)
+    }
   }, [session])
 
   const reloadLeads = async () => setLeads(await getLeads())
