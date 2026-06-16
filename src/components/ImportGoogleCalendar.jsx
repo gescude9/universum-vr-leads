@@ -105,15 +105,16 @@ export default function ImportGoogleCalendar({ gcal, vendedores, onImportar, onC
         calendarId: 'primary',
         timeMin: '2026-01-01T00:00:00Z',
         timeMax: '2026-12-31T23:59:59Z',
-        maxResults: 250,
+        maxResults: 500,
         singleEvents: true,
         orderBy: 'startTime',
-        q: 'Cumpleaños',
       })
 
-      const items = (resp.result.items || []).filter(e =>
-        /cumplea/i.test(e.summary || '')
-      )
+      // Tangerine = colorId "6", Default = sin colorId o colorId null/undefined
+      const items = (resp.result.items || []).filter(e => {
+        const cid = e.colorId
+        return !cid || cid === '6'
+      })
 
       if (items.length === 0) {
         setError('No se encontraron eventos de cumpleaños en 2026.')
