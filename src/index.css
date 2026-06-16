@@ -402,3 +402,41 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
   /* Calendario día único en pantallas muy pequeñas */
   .gcal{min-width:420px}
 }
+
+/* ---------- Google Calendar Button ---------- */
+.gcal-btn{
+  display:flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,rgba(168,85,247,.15),rgba(34,211,255,.1));
+  border:1px solid var(--border-strong);
+  border-radius:var(--radius-sm);padding:10px 14px;
+  cursor:pointer;font:inherit;font-size:13px;font-weight:600;
+  color:var(--text);transition:.18s;margin-bottom:8px;
+  width:100%;justify-content:center;
+  box-shadow:0 4px 14px -6px rgba(168,85,247,.4);
+}
+.gcal-btn:hover{
+  background:linear-gradient(135deg,rgba(168,85,247,.28),rgba(34,211,255,.18));
+  border-color:var(--purple);
+  box-shadow:0 6px 20px -6px rgba(168,85,247,.7);
+  transform:translateY(-1px);
+}
+.gcal-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.gcal-connected{
+  background:linear-gradient(135deg,rgba(62,224,143,.15),rgba(34,211,255,.1));
+  border-color:rgba(62,224,143,.45);color:var(--good);
+  box-shadow:0 4px 14px -6px rgba(62,224,143,.4);
+}
+.gcal-connected:hover{
+  background:linear-gradient(135deg,rgba(62,224,143,.25),rgba(34,211,255,.15));
+  box-shadow:0 6px 20px -6px rgba(62,224,143,.6);
+}
+.gcal-icon{font-size:15px}
+.gcal-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--good);
+  box-shadow:0 0 8px var(--good);margin-left:auto;flex-shrink:0;
+  animation:pulse-dot 2s ease infinite;
+}
+@keyframes pulse-dot{
+  0%,100%{box-shadow:0 0 6px var(--good)}
+  50%{box-shadow:0 0 14px var(--good),0 0 4px #fff}
+}

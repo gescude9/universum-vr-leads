@@ -11,6 +11,7 @@ import { ultimaHoraInicio, hayConflicto } from './lib/helpers'
 import { useTranslation } from 'react-i18next'
 import { useGoogleCalendar } from './hooks/useGoogleCalendar'
 import GoogleCalendarBtn from './components/GoogleCalendarBtn'
+import ImportGoogleCalendar from './components/ImportGoogleCalendar'
 import Auth from './components/Auth'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
@@ -32,7 +33,8 @@ export default function App() {
   const [dataReady, setDataReady] = useState(false)
 
   const [view, setView] = useState('dashboard')
-  const [leadModal, setLeadModal] = useState(null) // { lead, preset } | null
+  const [leadModal, setLeadModal] = useState(null)
+  const [importModal, setImportModal] = useState(false) // { lead, preset } | null
   const [vendModal, setVendModal] = useState(null) // { vendedor } | null
   const [saving, setSaving] = useState(false)
 
@@ -93,6 +95,16 @@ export default function App() {
 
   const reloadLeads = async () => setLeads(await getLeads())
   const reloadVend = async () => setVendedores(await getVendedores())
+
+  // ---------- Importar desde Google Calendar ----------
+  async function onImportarLead(payload) {
+    try {
+      await createLead(payload)
+    } catch(e) {
+      console.error('Error importando lead:', e)
+    }
+    await reloadLeads()
+  }
 
   // ---------- Handlers de leads ----------
   function openNewLead(preset) { setLeadModal({ lead: null, preset: preset || null }) }
@@ -245,6 +257,7 @@ export default function App() {
           email={session.user?.email}
           onLogout={logout}
           gcal={gcal}
+          onImportar={() => setImportModal(true)}
         />
         <main className="main">
           {view === 'dashboard' && (
@@ -295,6 +308,14 @@ export default function App() {
         />
       )}
 
+      {importModal && (
+        <ImportGoogleCalendar
+          gcal={gcal}
+          vendedores={vendedores}
+          onImportar={onImportarLead}
+          onClose={() => { setImportModal(false); reloadLeads() }}
+        />
+      )}
       <Toast toast={toast} />
     </>
   )
