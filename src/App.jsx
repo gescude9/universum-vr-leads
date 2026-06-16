@@ -8,6 +8,7 @@ import {
 import { COMISION } from './constants'
 import { ultimaHoraInicio, hayConflicto } from './lib/helpers'
 
+import { useTranslation } from 'react-i18next'
 import Auth from './components/Auth'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
@@ -19,6 +20,7 @@ import Calendario from './components/Calendario'
 import Toast from './components/Toast'
 
 export default function App() {
+  const { t } = useTranslation()
   const [session, setSession] = useState(null)
   const [authReady, setAuthReady] = useState(false)
 
@@ -27,8 +29,8 @@ export default function App() {
   const [dataReady, setDataReady] = useState(false)
 
   const [view, setView] = useState('dashboard')
-  const [leadModal, setLeadModal] = useState(null)
-  const [vendModal, setVendModal] = useState(null)
+  const [leadModal, setLeadModal] = useState(null) // { lead, preset } | null
+  const [vendModal, setVendModal] = useState(null) // { vendedor } | null
   const [saving, setSaving] = useState(false)
 
   const [toast, setToast] = useState({ msg: '', type: 'ok', show: false })
@@ -65,7 +67,7 @@ export default function App() {
         setVendedores(v)
         setLeads(l)
       } catch (e) {
-        notify('Error cargando datos: ' + e.message, 'bad')
+        notify(t('common.errorDatos', { msg: e.message }), 'bad')
       } finally {
         if (activo) setDataReady(true)
       }
@@ -94,18 +96,18 @@ export default function App() {
   function openEditLead(lead) { setLeadModal({ lead, preset: null }) }
 
   async function onSaveLead(payload, id) {
-    if (!payload.nombre) { notify('El nombre del cliente es obligatorio', 'bad'); return false }
-    if (!payload.telefono) { notify('El teléfono es obligatorio', 'bad'); return false }
+    if (!payload.nombre) { notify(t('leadModal.errorNombre'), 'bad'); return false }
+    if (!payload.telefono) { notify(t('leadModal.errorTelefono'), 'bad'); return false }
 
     if (payload.fecha && payload.hora) {
       if (parseInt(payload.hora) > ultimaHoraInicio(payload.fecha)) {
-        notify('Esa hora está fuera del horario de ese día', 'bad'); return false
+        notify(t('leadModal.errorHora'), 'bad'); return false
       }
       const c = hayConflicto(leads, payload.fecha, payload.hora, payload.paquete, id)
-      if (c) { notify(`Choca con la reserva de ${c.nombre} (${c.hora})`, 'bad'); return false }
+      if (c) { notify(t('leadModal.errorConflicto', { nombre: c.nombre, hora: c.hora }), 'bad'); return false }
     }
     if (payload.estado === 'Cerrado' && (Number(payload.monto_cerrado) || 0) <= 0) {
-      notify('Para cerrar el lead ingresa el monto cerrado', 'bad'); return false
+      notify(t('leadModal.errorCerrado'), 'bad'); return false
     }
 
     payload.comision =
@@ -118,10 +120,10 @@ export default function App() {
       if (id) await updateLead(id, payload)
       else await createLead(payload)
       await reloadLeads()
-      notify(id ? 'Lead actualizado' : 'Lead creado', 'ok')
+      notify(id ? t('leadModal.exitoActualizado') : t('leadModal.exitoCreado'), 'ok')
       return true
     } catch (e) {
-      notify('Error al guardar: ' + e.message, 'bad')
+      notify(t('leadModal.errorGuardar', { msg: e.message }), 'bad')
       return false
     } finally {
       setSaving(false)
@@ -129,25 +131,25 @@ export default function App() {
   }
 
   async function onDeleteLead(lead) {
-    if (!confirm(`¿Eliminar el lead de "${lead.nombre}"? Esta acción no se puede deshacer.`)) return
+    if (!confirm(t('common.confirmarEliminarLead', { nombre: lead.nombre }))) return
     try {
       await deleteLead(lead.id)
       await reloadLeads()
-      notify('Lead eliminado', 'ok')
+      notify(t('common.leadEliminado'), 'ok')
     } catch (e) {
-      notify('Error: ' + e.message, 'bad')
+      notify(t('common.errorEliminar', { msg: e.message }), 'bad')
     }
   }
 
   // ---------- Handlers de vendedores ----------
   async function onSaveVend(payload, id) {
-    if (!payload.nombre) { notify('El nombre del vendedor es obligatorio', 'bad'); return false }
+    if (!payload.nombre) { notify(t('vendedorModal.errorNombre'), 'bad'); return false }
     try {
       setSaving(true)
       if (id) await updateVendedor(id, payload)
       else await createVendedor(payload)
       await reloadVend()
-      notify(id ? 'Vendedor actualizado' : 'Vendedor agregado', 'ok')
+      notify(id ? t('vendedorModal.exitoActualizado') : t('vendedorModal.exitoCreado'), 'ok')
       return true
     } catch (e) {
       notify('Error: ' + e.message, 'bad')
@@ -166,7 +168,7 @@ export default function App() {
     try {
       await deleteVendedor(v.id)
       await Promise.all([reloadVend(), reloadLeads()])
-      notify('Vendedor eliminado', 'ok')
+      notify(t('common.vendedorEliminado'), 'ok')
     } catch (e) {
       notify('Error: ' + e.message, 'bad')
     }
@@ -183,7 +185,7 @@ export default function App() {
   if (!authReady) {
     return (
       <div className="center-screen">
-        <div><div className="spinner"></div><div className="loading-text">Cargando…</div></div>
+        <div><div className="spinner"></div><div className="loading-text">{t('common.cargando')}</div></div>
       </div>
     )
   }
@@ -193,7 +195,7 @@ export default function App() {
   if (!dataReady) {
     return (
       <div className="center-screen">
-        <div><div className="spinner"></div><div className="loading-text">Cargando tus datos…</div></div>
+        <div><div className="spinner"></div><div className="loading-text">{t('common.cargandoDatos')}</div></div>
       </div>
     )
   }

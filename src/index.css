@@ -282,3 +282,13 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
 @media(max-width:520px){
   .kpis{grid-template-columns:1fr}
 }
+
+/* ---------- Language Toggle ---------- */
+.lang-toggle{display:flex;align-items:center;gap:6px;background:rgba(140,108,255,.12);
+  border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;
+  cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:var(--muted);
+  transition:.15s;margin-bottom:8px;width:100%;justify-content:center}
+.lang-toggle:hover{background:rgba(140,108,255,.22);color:var(--text)}
+.lang-active{color:#fff;background:var(--grad);-webkit-background-clip:text;
+  background-clip:text;color:transparent;font-weight:700}
+.lang-sep{opacity:.35}

@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { COMISION, ESTADOS, PAQUETES, PERSONAS, PREMIUM, DURACION } from '../constants'
 import { precioDe, horasDe, todayISO, money } from '../lib/helpers'
 
 export default function LeadModal({ lead, preset, vendedores, onSave, onClose, saving }) {
+  const { t } = useTranslation()
   const initFecha = lead?.fecha || preset?.fecha || todayISO()
   const initHora = lead?.hora || preset?.hora || '11:00'
   const initPaquete = lead?.paquete || 'Gaming'
@@ -24,8 +26,7 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, s
     notas: lead?.notas || '',
   })
 
-  const upd = (campo, valor) => setF((prev) => ({ ...prev, [campo]: valor }))
-
+  const upd = (k, v) => setF(p => ({ ...p, [k]: v }))
   const horas = horasDe(f.fecha)
   const isFull = f.paquete === 'Full VR'
   const precio = precioDe(f.paquete, f.personas)
@@ -34,32 +35,21 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, s
   function setFecha(v) {
     const lista = horasDe(v)
     const hora = lista.includes(f.hora) ? f.hora : lista[0]
-    setF((p) => ({ ...p, fecha: v, hora }))
+    setF(p => ({ ...p, fecha: v, hora }))
   }
   function setPaquete(v) {
-    setF((p) => ({
-      ...p,
-      paquete: v,
-      monto_estimado: precioDe(v, p.personas),
-      premium: v === 'Full VR' ? p.premium : '',
-    }))
+    setF(p => ({ ...p, paquete: v, monto_estimado: precioDe(v, p.personas), premium: v === 'Full VR' ? p.premium : '' }))
   }
   function setPersonas(v) {
-    setF((p) => ({ ...p, personas: Number(v), monto_estimado: precioDe(p.paquete, v) }))
+    setF(p => ({ ...p, personas: Number(v), monto_estimado: precioDe(p.paquete, v) }))
   }
 
   async function submit() {
     const payload = {
-      nombre: f.nombre.trim(),
-      telefono: f.telefono.trim(),
-      contacto: f.contacto.trim(),
-      vendedor: f.vendedor || null,
-      fecha: f.fecha,
-      hora: f.hora,
-      personas: Number(f.personas),
-      paquete: f.paquete,
-      premium: isFull ? f.premium : '',
-      estado: f.estado,
+      nombre: f.nombre.trim(), telefono: f.telefono.trim(), contacto: f.contacto.trim(),
+      vendedor: f.vendedor || null, fecha: f.fecha, hora: f.hora,
+      personas: Number(f.personas), paquete: f.paquete,
+      premium: isFull ? f.premium : '', estado: f.estado,
       monto_estimado: Number(f.monto_estimado) || precioDe(f.paquete, f.personas),
       monto_cerrado: Number(f.monto_cerrado) || 0,
       notas: f.notas.trim(),
@@ -69,113 +59,74 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, s
   }
 
   return (
-    <div
-      className="overlay"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-    >
+    <div className="overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal">
         <div className="modal-head">
-          <h2>{lead ? 'Editar lead' : 'Nuevo lead'}</h2>
+          <h2>{lead ? t('leadModal.editarLead') : t('leadModal.nuevoLead')}</h2>
           <button className="x" onClick={onClose}>×</button>
         </div>
-
         <div className="modal-body">
-          <div className="field">
-            <label>Nombre del cliente *</label>
-            <input value={f.nombre} onChange={(e) => upd('nombre', e.target.value)} placeholder="Ej. Sofía Pérez" />
-          </div>
-          <div className="field">
-            <label>Teléfono *</label>
-            <input value={f.telefono} onChange={(e) => upd('telefono', e.target.value)} placeholder="Ej. 6000-0000" />
-          </div>
-          <div className="field">
-            <label>Instagram o email</label>
-            <input value={f.contacto} onChange={(e) => upd('contacto', e.target.value)} placeholder="@usuario o correo" />
-          </div>
-          <div className="field">
-            <label>Vendedor asignado</label>
-            <select value={f.vendedor} onChange={(e) => upd('vendedor', e.target.value)}>
-              <option value="">— Sin asignar —</option>
-              {vendedores.map((v) => <option key={v.id} value={v.id}>{v.nombre}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>Fecha del cumpleaños *</label>
-            <input type="date" value={f.fecha} onChange={(e) => setFecha(e.target.value)} />
-          </div>
-          <div className="field">
-            <label>Hora solicitada *</label>
-            <select value={f.hora} onChange={(e) => upd('hora', e.target.value)}>
-              {horas.map((h) => <option key={h} value={h}>{h}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>Cantidad de personas</label>
-            <select value={f.personas} onChange={(e) => setPersonas(e.target.value)}>
-              {PERSONAS.map((p) => <option key={p} value={p}>{p} personas</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>Paquete</label>
-            <select value={f.paquete} onChange={(e) => setPaquete(e.target.value)}>
-              {PAQUETES.map((p) => <option key={p} value={p}>{p} · {DURACION[p]}h</option>)}
-            </select>
-          </div>
-
+          <div className="field"><label>{t('leadModal.nombre')}</label>
+            <input value={f.nombre} onChange={e => upd('nombre', e.target.value)} placeholder={t('leadModal.nombrePlaceholder')} /></div>
+          <div className="field"><label>{t('leadModal.telefono')}</label>
+            <input value={f.telefono} onChange={e => upd('telefono', e.target.value)} placeholder={t('leadModal.telefonoPlaceholder')} /></div>
+          <div className="field"><label>{t('leadModal.contacto')}</label>
+            <input value={f.contacto} onChange={e => upd('contacto', e.target.value)} placeholder={t('leadModal.contactoPlaceholder')} /></div>
+          <div className="field"><label>{t('leadModal.vendedor')}</label>
+            <select value={f.vendedor} onChange={e => upd('vendedor', e.target.value)}>
+              <option value="">{t('leadModal.sinAsignar')}</option>
+              {vendedores.map(v => <option key={v.id} value={v.id}>{v.nombre}</option>)}
+            </select></div>
+          <div className="field"><label>{t('leadModal.fecha')}</label>
+            <input type="date" value={f.fecha} onChange={e => setFecha(e.target.value)} /></div>
+          <div className="field"><label>{t('leadModal.hora')}</label>
+            <select value={f.hora} onChange={e => upd('hora', e.target.value)}>
+              {horas.map(h => <option key={h} value={h}>{h}</option>)}
+            </select></div>
+          <div className="field"><label>{t('leadModal.personas')}</label>
+            <select value={f.personas} onChange={e => setPersonas(e.target.value)}>
+              {PERSONAS.map(p => <option key={p} value={p}>{t('leadModal.personas_n', { n: p })}</option>)}
+            </select></div>
+          <div className="field"><label>{t('leadModal.paquete')}</label>
+            <select value={f.paquete} onChange={e => setPaquete(e.target.value)}>
+              {PAQUETES.map(p => <option key={p} value={p}>{p} · {DURACION[p]}h</option>)}
+            </select></div>
           {isFull && (
-            <div className="field full">
-              <label>Experiencia premium (Full VR)</label>
-              <select value={f.premium} onChange={(e) => upd('premium', e.target.value)}>
-                <option value="">— Selecciona una experiencia —</option>
-                {PREMIUM.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
+            <div className="field full"><label>{t('leadModal.premium')}</label>
+              <select value={f.premium} onChange={e => upd('premium', e.target.value)}>
+                <option value="">{t('leadModal.seleccionaExp')}</option>
+                {PREMIUM.map(p => <option key={p} value={p}>{p}</option>)}
+              </select></div>
           )}
-
           <div className="calc-box">
-            <div>
-              <div className="hint" style={{ color: 'var(--muted)' }}>Precio del paquete</div>
-              <div className="price">{money(precio)}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div className="hint" style={{ color: 'var(--muted)' }}>Comisión (10% del cierre)</div>
-              <div className="com">{money(comision)}</div>
-            </div>
+            <div><div className="hint" style={{ color: 'var(--muted)' }}>{t('leadModal.precioPaquete')}</div>
+              <div className="price">{money(precio)}</div></div>
+            <div style={{ textAlign: 'right' }}><div className="hint" style={{ color: 'var(--muted)' }}>{t('leadModal.comision10')}</div>
+              <div className="com">{money(comision)}</div></div>
           </div>
-
-          <div className="field">
-            <label>Estado del lead</label>
-            <select value={f.estado} onChange={(e) => upd('estado', e.target.value)}>
-              {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>Monto estimado ($)</label>
+          <div className="field"><label>{t('leadModal.estado')}</label>
+            <select value={f.estado} onChange={e => upd('estado', e.target.value)}>
+              {ESTADOS.map(e => <option key={e} value={e}>{t(`estados.${e}`)}</option>)}
+            </select></div>
+          <div className="field"><label>{t('leadModal.estimado')}</label>
             <input type="number" min="0" step="1" value={f.monto_estimado}
-              onChange={(e) => upd('monto_estimado', e.target.value)} placeholder="0" />
-          </div>
+              onChange={e => upd('monto_estimado', e.target.value)} placeholder="0" /></div>
           <div className="field full">
-            <label>
-              Monto cerrado ($){' '}
-              <span className="hint">
-                {f.estado === 'Cerrado' ? '· requerido para calcular comisión' : '· (se usa al marcar como Cerrado)'}
-              </span>
+            <label>{t('leadModal.cerrado')}{' '}
+              <span className="hint">{f.estado === 'Cerrado' ? t('leadModal.cerradoHint') : t('leadModal.cerradoHint2')}</span>
             </label>
             <input type="number" min="0" step="1" value={f.monto_cerrado}
-              onChange={(e) => upd('monto_cerrado', e.target.value)} placeholder="0" />
-            <div className="hint">La comisión se calcula automáticamente al 10% del monto cerrado.</div>
+              onChange={e => upd('monto_cerrado', e.target.value)} placeholder="0" />
+            <div className="hint">{t('leadModal.comisionHint')}</div>
           </div>
-          <div className="field full">
-            <label>Notas internas</label>
-            <textarea value={f.notas} onChange={(e) => upd('notas', e.target.value)}
-              placeholder="Detalles de la conversación, preferencias, objeciones…" />
-          </div>
+          <div className="field full"><label>{t('leadModal.notas')}</label>
+            <textarea value={f.notas} onChange={e => upd('notas', e.target.value)}
+              placeholder={t('leadModal.notasPlaceholder')} /></div>
         </div>
-
         <div className="modal-foot">
-          <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-ghost" onClick={onClose}>{t('leadModal.cancelar')}</button>
           <button className="btn btn-primary" onClick={submit} disabled={saving}>
-            {saving ? 'Guardando…' : 'Guardar lead'}
+            {saving ? t('leadModal.guardando') : t('leadModal.guardar')}
           </button>
         </div>
       </div>
