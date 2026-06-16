@@ -110,11 +110,22 @@ export default function ImportGoogleCalendar({ gcal, vendedores, onImportar, onC
         orderBy: 'startTime',
       })
 
+      // Log para diagnóstico — ver todos los colorIds
+      const todos = resp.result.items || []
+      const colorCount = {}
+      todos.forEach(e => {
+        const cid = e.colorId || 'default(sin color)'
+        colorCount[cid] = (colorCount[cid] || 0) + 1
+      })
+      console.log('=== COLORES EN TU GOOGLE CALENDAR 2026 ===', colorCount)
+      console.log('Total eventos encontrados:', todos.length)
+
       // Tangerine = colorId "6", Default = sin colorId o colorId null/undefined
-      const items = (resp.result.items || []).filter(e => {
+      const items = todos.filter(e => {
         const cid = e.colorId
         return !cid || cid === '6'
       })
+      console.log('Eventos con color Tangerine/Default:', items.length)
 
       if (items.length === 0) {
         setError('No se encontraron eventos de cumpleaños en 2026.')
