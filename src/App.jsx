@@ -97,13 +97,15 @@ export default function App() {
   const reloadVend = async () => setVendedores(await getVendedores())
 
   // ---------- Importar desde Google Calendar ----------
+  // Al importar NO sincronizamos de vuelta a Google Calendar
+  // porque el evento ya existe allá — evitamos duplicados
   async function onImportarLead(payload) {
     try {
       await createLead(payload)
+      // NO llamamos a gcal.crearEvento() aquí intencionalmente
     } catch(e) {
       console.error('Error importando lead:', e)
     }
-    await reloadLeads()
   }
 
   // ---------- Handlers de leads ----------
