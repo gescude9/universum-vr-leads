@@ -52,16 +52,16 @@ export default function Leads({ leads, vendedores, onNew, onEdit, onDelete }) {
               <tr><td colSpan={10} className="empty"><div className="big">✨</div>{t('leads.sinLeads')}</td></tr>
             ) : rows.map(l => (
               <tr key={l.id}>
-                <td><div className="strong">{l.nombre}</div><div className="sub">{l.contacto || l.telefono || ''}</div></td>
-                <td>{fmtFecha(l.fecha)}<div className="sub">{l.hora || ''}</div></td>
-                <td><span className="pkg-tag">{l.paquete}</span>{l.premium && <div className="sub">{l.premium}</div>}</td>
-                <td>{l.personas}</td>
-                <td>{vName(l.vendedor)}</td>
-                <td><span className={`pill st-${l.estado}`}>{t(`estados.${l.estado}`)}</span></td>
-                <td>{money(l.monto_estimado)}</td>
-                <td>{l.estado === 'Cerrado' ? money(l.monto_cerrado) : '—'}</td>
-                <td style={{ color: 'var(--good)', fontWeight: 600 }}>{l.estado === 'Cerrado' ? money(l.comision) : '—'}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>
+                <td data-label={t('leads.columnas.cliente')}><div className="strong">{l.nombre}</div><div className="sub">{l.contacto || l.telefono || ''}</div></td>
+                <td data-label={t('leads.columnas.cumpleanos')}>{fmtFecha(l.fecha)}<div className="sub">{l.hora || ''}</div></td>
+                <td data-label={t('leads.columnas.paquete')}><span className="pkg-tag">{l.paquete}</span>{l.premium && <div className="sub">{l.premium}</div>}</td>
+                <td data-label={t('leads.columnas.personas')}>{l.personas}</td>
+                <td data-label={t('leads.columnas.vendedor')}>{vName(l.vendedor)}</td>
+                <td data-label={t('leads.columnas.estado')}><span className={`pill st-${l.estado}`}>{t(`estados.${l.estado}`)}</span></td>
+                <td data-label={t('leads.columnas.estimado')}>{money(l.monto_estimado)}</td>
+                <td data-label={t('leads.columnas.cerrado')}>{l.estado === 'Cerrado' ? money(l.monto_cerrado) : '—'}</td>
+                <td data-label={t('leads.columnas.comision')} style={{ color: 'var(--good)', fontWeight: 600 }}>{l.estado === 'Cerrado' ? money(l.comision) : '—'}</td>
+                <td>
                   <button className="btn btn-ghost btn-sm" onClick={() => onEdit(l)}>{t('leads.editar')}</button>{' '}
                   <button className="btn btn-danger btn-sm" onClick={() => onDelete(l)}>{t('leads.eliminar')}</button>
                 </td>

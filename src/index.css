@@ -265,24 +265,6 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{color:var(--muted);text-align:center;font-size:14px}
 
-/* ---------- Responsive ---------- */
-@media(max-width:860px){
-  .app{grid-template-columns:1fr}
-  .sidebar{position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;flex-direction:row;
-    z-index:40;padding:10px;gap:4px;border-right:0;border-top:1px solid var(--border);overflow-x:auto}
-  .brand,.sidebar .spacer,.user-chip,.logout{display:none}
-  .nav-btn{flex-direction:column;gap:4px;font-size:11px;padding:8px 10px;min-width:72px;text-align:center}
-  .nav-btn .ic{font-size:18px}
-  .main{padding:24px 18px 110px}
-  .kpis{grid-template-columns:repeat(2,1fr)}
-  .kpis.money{grid-template-columns:1fr}
-  .modal-body{grid-template-columns:1fr}
-  .page-head h1{font-size:23px}
-}
-@media(max-width:520px){
-  .kpis{grid-template-columns:1fr}
-}
-
 /* ---------- Language Toggle ---------- */
 .lang-toggle{display:flex;align-items:center;gap:6px;background:rgba(140,108,255,.12);
   border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;
@@ -292,3 +274,131 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
 .lang-active{color:#fff;background:var(--grad);-webkit-background-clip:text;
   background-clip:text;color:transparent;font-weight:700}
 .lang-sep{opacity:.35}
+
+/* ============================================================
+   RESPONSIVE — Solo afecta móvil, desktop no cambia
+   ============================================================ */
+
+/* ---------- Tablet (860px) ---------- */
+@media(max-width:860px){
+  /* Layout */
+  .app{grid-template-columns:1fr}
+
+  /* Sidebar → barra inferior */
+  .sidebar{
+    position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;
+    flex-direction:row;z-index:40;padding:8px 4px;gap:2px;
+    border-right:0;border-top:1px solid var(--border);
+    overflow-x:auto;justify-content:space-around;
+    background:linear-gradient(0deg,rgba(10,4,28,.98),rgba(20,10,46,.95));
+  }
+  .brand,.sidebar .spacer,.user-chip,.logout{display:none}
+  .nav-btn{
+    flex-direction:column;gap:3px;font-size:10px;font-weight:600;
+    padding:8px 6px;min-width:60px;max-width:80px;text-align:center;
+    border-radius:12px;
+  }
+  .nav-btn .ic{font-size:20px;width:auto}
+
+  /* Lang toggle en móvil → compacto en la barra inferior */
+  .lang-toggle{
+    flex-direction:column;gap:2px;padding:6px 8px;margin-bottom:0;
+    width:auto;min-width:56px;border-radius:12px;font-size:10px;
+  }
+  .lang-sep{display:none}
+
+  /* Contenido principal */
+  .main{padding:20px 14px 100px}
+
+  /* Page header */
+  .page-head{margin-bottom:16px;gap:10px}
+  .page-head h1{font-size:22px}
+  .page-head p{font-size:13px}
+  .page-head .btn{padding:9px 14px;font-size:13px}
+
+  /* KPIs — 2 columnas en tablet */
+  .kpis{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+  .kpis.money{grid-template-columns:repeat(2,1fr)}
+  .kpi .val{font-size:28px}
+  .kpi .lbl{font-size:11px}
+  .card{padding:14px}
+
+  /* Toolbar */
+  .toolbar{gap:8px}
+  .toolbar input{min-width:0;width:100%;flex:1 1 100%}
+  .toolbar select{flex:1}
+
+  /* Tablas → cards en móvil */
+  .table-wrap{border-radius:var(--radius-sm);overflow:hidden}
+  table{min-width:0}
+  thead{display:none}
+  tbody tr{
+    display:flex;flex-direction:column;gap:6px;
+    padding:14px;border-bottom:1px solid rgba(140,108,255,.15);
+    position:relative;
+  }
+  tbody tr:last-child{border-bottom:0}
+  tbody td{
+    padding:0;border:0;font-size:13px;
+    display:flex;align-items:center;gap:8px;
+  }
+  tbody td::before{
+    content:attr(data-label);
+    font-size:10px;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.8px;
+    min-width:80px;flex-shrink:0;
+  }
+  tbody td:last-child{justify-content:flex-end;margin-top:4px}
+  tbody td:empty{display:none}
+  td .sub{font-size:11px;margin-top:0}
+
+  /* Modal */
+  .overlay{padding:16px 10px 100px}
+  .modal{border-radius:16px}
+  .modal-body{grid-template-columns:1fr;gap:10px;padding:16px}
+  .modal-head{padding:16px}
+  .modal-head h2{font-size:17px}
+  .modal-foot{padding:14px 16px;gap:8px}
+  .modal-foot .btn{flex:1;justify-content:center}
+  .field input,.field select,.field textarea{font-size:16px;padding:12px}
+  .calc-box{flex-direction:column;gap:10px;text-align:center}
+
+  /* Calendario */
+  .cal-controls{gap:6px;flex-wrap:wrap}
+  .cal-label{font-size:14px;min-width:0;flex:1}
+  .cal-controls input[type=date]{flex:1;min-width:0;font-size:13px}
+  .cal-legend{font-size:11px;gap:8px;flex-direction:column}
+  .gcal-wrap{border-radius:var(--radius-sm)}
+  .gcal{min-width:500px}
+  .gcal-head .dh small{font-size:9px;letter-spacing:.5px}
+  .gcal-head .dh b{font-size:14px}
+  .gcal-times .t{font-size:9px}
+  .gc-event b{font-size:10px}
+  .gc-event .pk{font-size:9px}
+
+  /* Auth */
+  .auth-card{padding:24px 18px}
+}
+
+/* ---------- Móvil pequeño (480px) ---------- */
+@media(max-width:480px){
+  /* KPIs → 2 columnas compactas */
+  .kpis{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpis.money{grid-template-columns:1fr}
+  .kpi .val{font-size:24px}
+  .card{padding:12px}
+
+  /* Main más ajustado */
+  .main{padding:16px 12px 96px}
+  .page-head h1{font-size:20px}
+
+  /* Barra inferior más compacta */
+  .nav-btn{min-width:50px;font-size:9px;padding:7px 4px}
+  .nav-btn .ic{font-size:18px}
+
+  /* Toast más ancho */
+  .toast{width:90%;text-align:center;font-size:13px}
+
+  /* Calendario día único en pantallas muy pequeñas */
+  .gcal{min-width:420px}
+}

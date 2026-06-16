@@ -69,12 +69,12 @@ export default function Dashboard({ leads, vendedores, onNewLead }) {
               <tr><td colSpan={6} className="empty"><div className="big">🪐</div>{t('dashboard.noCumples')}</td></tr>
             ) : prox.map(l => (
               <tr key={l.id}>
-                <td className="strong">{l.nombre}</td>
-                <td>{fmtFecha(l.fecha)}</td>
-                <td>{l.hora || '—'}</td>
-                <td><span className="pkg-tag">{l.paquete}</span></td>
-                <td>{vName(l.vendedor)}</td>
-                <td><span className={`pill st-${l.estado}`}>{t(`estados.${l.estado}`)}</span></td>
+                <td data-label="Cliente" className="strong">{l.nombre}</td>
+                <td data-label="Fecha">{fmtFecha(l.fecha)}</td>
+                <td data-label="Hora">{l.hora || '—'}</td>
+                <td data-label="Paquete"><span className="pkg-tag">{l.paquete}</span></td>
+                <td data-label="Vendedor">{vName(l.vendedor)}</td>
+                <td data-label="Estado"><span className={`pill st-${l.estado}`}>{t(`estados.${l.estado}`)}</span></td>
               </tr>
             ))}
           </tbody>

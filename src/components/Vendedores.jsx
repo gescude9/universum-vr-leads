@@ -32,14 +32,14 @@ export default function Vendedores({ vendedores, leads, onNew, onEdit, onDelete 
               const conv = sus.length ? Math.round(cerr.length / sus.length * 100) : 0
               return (
                 <tr key={v.id}>
-                  <td className="strong">{v.nombre}</td>
-                  <td><div className="sub">{v.telefono || '—'}</div><div className="sub">{v.email || ''}</div></td>
-                  <td>{sus.length}</td>
-                  <td>{cerr.length}</td>
-                  <td>{conv}%<div className="bar"><i style={{ width: `${conv}%` }}></i></div></td>
-                  <td>{money(vendido)}</td>
-                  <td style={{ color: 'var(--good)', fontWeight: 600 }}>{money(comision)}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
+                  <td data-label={t('vendedores.columnas.vendedor')} className="strong">{v.nombre}</td>
+                  <td data-label={t('vendedores.columnas.contacto')}><div className="sub">{v.telefono || '—'}</div><div className="sub">{v.email || ''}</div></td>
+                  <td data-label={t('vendedores.columnas.leads')}>{sus.length}</td>
+                  <td data-label={t('vendedores.columnas.cerrados')}>{cerr.length}</td>
+                  <td data-label={t('vendedores.columnas.conversion')}>{conv}%<div className="bar"><i style={{ width: `${conv}%` }}></i></div></td>
+                  <td data-label={t('vendedores.columnas.totalVendido')}>{money(vendido)}</td>
+                  <td data-label={t('vendedores.columnas.comision')} style={{ color: 'var(--good)', fontWeight: 600 }}>{money(comision)}</td>
+                  <td>
                     <button className="btn btn-ghost btn-sm" onClick={() => onEdit(v)}>{t('vendedores.editar')}</button>{' '}
                     <button className="btn btn-danger btn-sm" onClick={() => onDelete(v)}>{t('vendedores.eliminar')}</button>
                   </td>
