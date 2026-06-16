@@ -10,9 +10,9 @@ export default function LanguageToggle() {
 
   return (
     <button className="lang-toggle" onClick={toggle} title={isEN ? 'Cambiar a Español' : 'Switch to English'}>
-      <span className={!isEN ? 'lang-active' : ''}>ES</span>
+      <span className={!isEN ? 'lang-active' : ''}>🇪🇸 ES</span>
       <span className="lang-sep">|</span>
-      <span className={isEN ? 'lang-active' : ''}>EN</span>
+      <span className={isEN ? 'lang-active' : ''}>🇬🇧 EN</span>
     </button>
   )
 }
