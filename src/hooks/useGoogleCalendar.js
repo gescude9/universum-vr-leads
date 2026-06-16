@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
-const SCOPES = 'https://www.googleapis.com/auth/calendar.events'
+const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly'
 
 export function useGoogleCalendar() {
   const [gapiLoaded, setGapiLoaded] = useState(false)

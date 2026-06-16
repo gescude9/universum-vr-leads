@@ -101,8 +101,19 @@ export default function ImportGoogleCalendar({ gcal, vendedores, onImportar, onC
       const token = sessionStorage.getItem('gc_token')
       window.gapi.client.setToken({ access_token: token })
 
+      // Buscar el calendario "Cumpleaños" entre todos los calendarios del usuario
+      const calList = await window.gapi.client.calendar.calendarList.list()
+      const calendarios = calList.result.items || []
+      console.log('Calendarios encontrados:', calendarios.map(c => c.summary + ' → ' + c.id))
+
+      const calCumple = calendarios.find(c =>
+        /cumplea/i.test(c.summary)
+      )
+      const calendarId = calCumple ? calCumple.id : 'primary'
+      console.log('Usando calendario:', calendarId)
+
       const resp = await window.gapi.client.calendar.events.list({
-        calendarId: 'primary',
+        calendarId,
         timeMin: '2026-01-01T00:00:00Z',
         timeMax: '2026-12-31T23:59:59Z',
         maxResults: 500,
@@ -110,22 +121,8 @@ export default function ImportGoogleCalendar({ gcal, vendedores, onImportar, onC
         orderBy: 'startTime',
       })
 
-      // Log para diagnóstico — ver todos los colorIds
-      const todos = resp.result.items || []
-      const colorCount = {}
-      todos.forEach(e => {
-        const cid = e.colorId || 'default(sin color)'
-        colorCount[cid] = (colorCount[cid] || 0) + 1
-      })
-      console.log('=== COLORES EN TU GOOGLE CALENDAR 2026 ===', colorCount)
-      console.log('Total eventos encontrados:', todos.length)
-
-      // Tangerine = colorId "6", Default = sin colorId o colorId null/undefined
-      const items = todos.filter(e => {
-        const cid = e.colorId
-        return !cid || cid === '6'
-      })
-      console.log('Eventos con color Tangerine/Default:', items.length)
+      const items = resp.result.items || []
+      console.log('Total eventos en calendario Cumpleaños:', items.length)
 
       if (items.length === 0) {
         setError('No se encontraron eventos de cumpleaños en 2026.')
