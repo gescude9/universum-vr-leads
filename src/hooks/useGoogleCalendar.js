@@ -1,15 +1,7 @@
-// ============================================================
-//  useGoogleCalendar — Autenticación OAuth y operaciones
-//  con Google Calendar API desde el frontend
-// ============================================================
 import { useState, useEffect, useCallback } from 'react'
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events'
-const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'
-
-// El calendario por defecto es "primary" (el principal del usuario)
-const CALENDAR_ID = 'primary'
 
 export function useGoogleCalendar() {
   const [gapiLoaded, setGapiLoaded] = useState(false)
@@ -17,130 +9,156 @@ export function useGoogleCalendar() {
   const [conectado, setConectado]   = useState(false)
   const [cargando, setCargando]     = useState(false)
   const [error, setError]           = useState('')
+  const [tokenClient, setTokenClient] = useState(null)
 
-  // Cargar scripts de Google
+  // Cargar script GAPI
   useEffect(() => {
-    // Script GAPI (Google API client)
-    const gapiScript = document.createElement('script')
-    gapiScript.src = 'https://apis.google.com/js/api.js'
-    gapiScript.onload = () => {
-      window.gapi.load('client', async () => {
+    if (document.getElementById('gapi-script')) {
+      if (window.gapi) initGapi()
+      return
+    }
+    const s = document.createElement('script')
+    s.id = 'gapi-script'
+    s.src = 'https://apis.google.com/js/api.js'
+    s.async = true
+    s.defer = true
+    s.onload = initGapi
+    s.onerror = () => setError('Error cargando Google API')
+    document.head.appendChild(s)
+  }, [])
+
+  function initGapi() {
+    window.gapi.load('client', async () => {
+      try {
         await window.gapi.client.init({
-          discoveryDocs: [DISCOVERY_DOC],
+          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
         })
         setGapiLoaded(true)
-      })
-    }
-    document.body.appendChild(gapiScript)
+        // Verificar token guardado
+        const token = sessionStorage.getItem('gc_token')
+        if (token) {
+          window.gapi.client.setToken({ access_token: token })
+          setConectado(true)
+        }
+      } catch(e) {
+        setError('Error iniciando Google API: ' + e.message)
+      }
+    })
+  }
 
-    // Script GIS (Google Identity Services)
-    const gisScript = document.createElement('script')
-    gisScript.src = 'https://accounts.google.com/gsi/client'
-    gisScript.onload = () => setGisLoaded(true)
-    document.body.appendChild(gisScript)
-
-    return () => {
-      document.body.removeChild(gapiScript)
-      document.body.removeChild(gisScript)
+  // Cargar script GIS
+  useEffect(() => {
+    if (document.getElementById('gis-script')) {
+      if (window.google?.accounts) initGIS()
+      return
     }
+    const s = document.createElement('script')
+    s.id = 'gis-script'
+    s.src = 'https://accounts.google.com/gsi/client'
+    s.async = true
+    s.defer = true
+    s.onload = initGIS
+    s.onerror = () => setError('Error cargando Google Identity')
+    document.head.appendChild(s)
   }, [])
 
-  // Iniciar sesión con Google
-  const conectar = useCallback(() => {
-    if (!gapiLoaded || !gisLoaded) return
-    setCargando(true)
-    setError('')
-
-    const tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      callback: (resp) => {
-        setCargando(false)
-        if (resp.error) {
-          setError('No se pudo conectar con Google Calendar.')
-          return
+  function initGIS() {
+    if (!CLIENT_ID) {
+      setError('Falta VITE_GOOGLE_CLIENT_ID en las variables de entorno')
+      return
+    }
+    try {
+      const tc = window.google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (resp) => {
+          setCargando(false)
+          if (resp.error) {
+            setError('Error de autenticación: ' + resp.error)
+            return
+          }
+          sessionStorage.setItem('gc_token', resp.access_token)
+          window.gapi.client.setToken({ access_token: resp.access_token })
+          setConectado(true)
+          setError('')
+        },
+        error_callback: (err) => {
+          setCargando(false)
+          if (err.type === 'popup_closed') {
+            setError('Popup cerrado. Intenta de nuevo.')
+          } else {
+            setError('Error: ' + err.type)
+          }
         }
-        setConectado(true)
-        // Guardar token en sessionStorage para esta sesión
-        sessionStorage.setItem('gc_token', resp.access_token)
-      },
-    })
-    tokenClient.requestAccessToken({ prompt: 'consent' })
-  }, [gapiLoaded, gisLoaded])
+      })
+      setTokenClient(tc)
+      setGisLoaded(true)
+    } catch(e) {
+      setError('Error iniciando GIS: ' + e.message)
+    }
+  }
 
-  // Desconectar
+  const conectar = useCallback(() => {
+    setError('')
+    if (!CLIENT_ID) { setError('Falta configurar el Client ID de Google'); return }
+    if (!gapiLoaded) { setError('Google API aún cargando, espera un momento'); return }
+    if (!gisLoaded || !tokenClient) { setError('Google Identity aún cargando, espera un momento'); return }
+    setCargando(true)
+    tokenClient.requestAccessToken({ prompt: 'consent' })
+  }, [gapiLoaded, gisLoaded, tokenClient])
+
   const desconectar = useCallback(() => {
     const token = sessionStorage.getItem('gc_token')
-    if (token) window.google.accounts.oauth2.revoke(token)
+    if (token && window.google?.accounts?.oauth2) {
+      window.google.accounts.oauth2.revoke(token, () => {})
+    }
     sessionStorage.removeItem('gc_token')
+    if (window.gapi?.client) window.gapi.client.setToken(null)
     setConectado(false)
+    setError('')
   }, [])
 
-  // Verificar si ya hay token al cargar
-  useEffect(() => {
-    if (!gapiLoaded) return
-    const token = sessionStorage.getItem('gc_token')
-    if (token) {
-      window.gapi.client.setToken({ access_token: token })
-      setConectado(true)
-    }
-  }, [gapiLoaded])
-
-  // ── Crear evento en Google Calendar ──
+  // ── Crear evento ──
   const crearEvento = useCallback(async (lead, vendedorNombre) => {
     if (!conectado) return null
     try {
       const token = sessionStorage.getItem('gc_token')
       window.gapi.client.setToken({ access_token: token })
-
       const { inicio, fin } = calcularHorario(lead)
-      const event = buildEvent(lead, vendedorNombre, inicio, fin)
-
       const resp = await window.gapi.client.calendar.events.insert({
-        calendarId: CALENDAR_ID,
-        resource: event,
+        calendarId: 'primary',
+        resource: buildEvent(lead, vendedorNombre, inicio, fin),
       })
       return resp.result.id
-    } catch (e) {
-      console.error('Error creando evento en Google Calendar:', e)
+    } catch(e) {
+      console.error('Error creando evento:', e)
       return null
     }
   }, [conectado])
 
-  // ── Actualizar evento existente ──
   const actualizarEvento = useCallback(async (googleEventId, lead, vendedorNombre) => {
     if (!conectado || !googleEventId) return
     try {
       const token = sessionStorage.getItem('gc_token')
       window.gapi.client.setToken({ access_token: token })
-
       const { inicio, fin } = calcularHorario(lead)
-      const event = buildEvent(lead, vendedorNombre, inicio, fin)
-
       await window.gapi.client.calendar.events.update({
-        calendarId: CALENDAR_ID,
+        calendarId: 'primary',
         eventId: googleEventId,
-        resource: event,
+        resource: buildEvent(lead, vendedorNombre, inicio, fin),
       })
-    } catch (e) {
-      console.error('Error actualizando evento en Google Calendar:', e)
-    }
+    } catch(e) { console.error('Error actualizando evento:', e) }
   }, [conectado])
 
-  // ── Eliminar evento ──
   const eliminarEvento = useCallback(async (googleEventId) => {
     if (!conectado || !googleEventId) return
     try {
       const token = sessionStorage.getItem('gc_token')
       window.gapi.client.setToken({ access_token: token })
-
       await window.gapi.client.calendar.events.delete({
-        calendarId: CALENDAR_ID,
-        eventId: googleEventId,
+        calendarId: 'primary', eventId: googleEventId,
       })
-    } catch (e) {
-      console.error('Error eliminando evento en Google Calendar:', e)
-    }
+    } catch(e) { console.error('Error eliminando evento:', e) }
   }, [conectado])
 
   return {
@@ -149,34 +167,19 @@ export function useGoogleCalendar() {
   }
 }
 
-// ── Helpers ──
-
 const DURACION = { 'Gaming': 1, 'Double Gaming': 2, 'Full VR': 3 }
 
 function calcularHorario(lead) {
-  const fecha = lead.fecha // YYYY-MM-DD
-  const hora  = lead.hora  // HH:00
-  const dur   = DURACION[lead.paquete] || 1
-
-  const [hh] = hora.split(':').map(Number)
-  const inicio = new Date(`${fecha}T${String(hh).padStart(2,'0')}:00:00`)
-  const fin    = new Date(inicio.getTime() + dur * 60 * 60 * 1000)
-
-  return {
-    inicio: inicio.toISOString(),
-    fin:    fin.toISOString(),
-  }
+  const [hh] = lead.hora.split(':').map(Number)
+  const inicio = new Date(`${lead.fecha}T${String(hh).padStart(2,'0')}:00:00`)
+  const fin = new Date(inicio.getTime() + (DURACION[lead.paquete] || 1) * 3600000)
+  return { inicio: inicio.toISOString(), fin: fin.toISOString() }
 }
 
 function buildEvent(lead, vendedorNombre, inicio, fin) {
-  const paqueteEmoji = {
-    'Gaming': '🎮',
-    'Double Gaming': '🎮🎮',
-    'Full VR': '🥽',
-  }[lead.paquete] || '🎂'
-
+  const emoji = { 'Gaming': '🎮', 'Double Gaming': '🎮🎮', 'Full VR': '🥽' }[lead.paquete] || '🎂'
   return {
-    summary: `${paqueteEmoji} Cumpleaños VR — ${lead.nombre}`,
+    summary: `${emoji} Cumpleaños VR — ${lead.nombre}`,
     description: [
       `👤 Cliente: ${lead.nombre}`,
       `📞 Teléfono: ${lead.telefono || '—'}`,
@@ -188,12 +191,12 @@ function buildEvent(lead, vendedorNombre, inicio, fin) {
     ].filter(Boolean).join('\n'),
     start: { dateTime: inicio, timeZone: 'America/Panama' },
     end:   { dateTime: fin,    timeZone: 'America/Panama' },
-    colorId: '11', // Rojo tomate — para que destaque en el calendario
+    colorId: '11',
     reminders: {
       useDefault: false,
       overrides: [
-        { method: 'email',  minutes: 24 * 60 }, // 1 día antes
-        { method: 'popup',  minutes: 60 },       // 1 hora antes
+        { method: 'email', minutes: 1440 },
+        { method: 'popup', minutes: 60 },
       ],
     },
   }

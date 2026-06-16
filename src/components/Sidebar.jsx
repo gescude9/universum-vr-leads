@@ -36,6 +36,7 @@ export default function Sidebar({ view, setView, email, onLogout, gcal }) {
         <GoogleCalendarBtn
           conectado={gcal.conectado}
           cargando={gcal.cargando}
+          error={gcal.error}
           gapiLoaded={gcal.gapiLoaded}
           gisLoaded={gcal.gisLoaded}
           onConectar={gcal.conectar}
