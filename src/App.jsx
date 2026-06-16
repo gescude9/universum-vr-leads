@@ -9,6 +9,8 @@ import { COMISION } from './constants'
 import { ultimaHoraInicio, hayConflicto } from './lib/helpers'
 
 import { useTranslation } from 'react-i18next'
+import { useGoogleCalendar } from './hooks/useGoogleCalendar'
+import GoogleCalendarBtn from './components/GoogleCalendarBtn'
 import Auth from './components/Auth'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
@@ -21,6 +23,7 @@ import Toast from './components/Toast'
 
 export default function App() {
   const { t } = useTranslation()
+  const gcal = useGoogleCalendar()
   const [session, setSession] = useState(null)
   const [authReady, setAuthReady] = useState(false)
 
@@ -117,8 +120,41 @@ export default function App() {
 
     try {
       setSaving(true)
-      if (id) await updateLead(id, payload)
-      else await createLead(payload)
+      const vNombre = vendedores.find(v => v.id === payload.vendedor)?.nombre || ''
+
+      if (id) {
+        // Editar lead existente
+        const leadExistente = leads.find(l => l.id === id)
+        await updateLead(id, payload)
+
+        // Sincronizar con Google Calendar si está conectado
+        if (gcal.conectado && payload.fecha && payload.hora) {
+          if (payload.estado === 'Cerrado') {
+            if (leadExistente?.google_event_id) {
+              // Actualizar evento existente
+              await gcal.actualizarEvento(leadExistente.google_event_id, payload, vNombre)
+            } else {
+              // Crear evento nuevo
+              const eventId = await gcal.crearEvento(payload, vNombre)
+              if (eventId) await updateLead(id, { google_event_id: eventId })
+            }
+          } else if (leadExistente?.google_event_id) {
+            // Si ya no está cerrado, eliminar el evento
+            await gcal.eliminarEvento(leadExistente.google_event_id)
+            await updateLead(id, { google_event_id: null })
+          }
+        }
+      } else {
+        // Lead nuevo
+        const nuevo = await createLead(payload)
+
+        // Sincronizar con Google Calendar si está cerrado y conectado
+        if (gcal.conectado && payload.estado === 'Cerrado' && payload.fecha && payload.hora) {
+          const eventId = await gcal.crearEvento(payload, vNombre)
+          if (eventId && nuevo?.id) await updateLead(nuevo.id, { google_event_id: eventId })
+        }
+      }
+
       await reloadLeads()
       notify(id ? t('leadModal.exitoActualizado') : t('leadModal.exitoCreado'), 'ok')
       return true
@@ -208,6 +244,7 @@ export default function App() {
           setView={setView}
           email={session.user?.email}
           onLogout={logout}
+          gcal={gcal}
         />
         <main className="main">
           {view === 'dashboard' && (
