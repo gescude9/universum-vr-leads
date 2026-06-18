@@ -1,7 +1,7 @@
 {
   "nav": {
     "dashboard": "Dashboard",
-    "leads": "Leads",
+    "leads": "Client Portfolio",
     "vendedores": "Sales Team",
     "calendario": "Calendar",
     "cerrarSesion": "Sign out",
@@ -36,13 +36,13 @@
     "delTotal": "% of total"
   },
   "leads": {
-    "titulo": "Leads",
-    "subtitulo": "Register and track each birthday.",
-    "nuevoLead": "+ New lead",
+    "titulo": "Client Portfolio",
+    "subtitulo": "Register and track each client.",
+    "nuevoLead": "+ New client",
     "buscar": "Search by name, phone or contact…",
     "todosEstados": "All statuses",
     "todosVendedores": "All salespeople",
-    "sinLeads": "No leads match. Create the first one with \"New lead\".",
+    "sinLeads": "No clients match. Create the first one with \"+ New client\".",
     "columnas": {
       "cliente": "Client",
       "cumpleanos": "Birthday",
@@ -138,8 +138,29 @@
     "nuevoLead": "+ New lead",
     "horarios": "Schedule: Mon–Thu & Sun 11:00 AM–8:00 PM · Fri–Sat 11:00 AM–9:00 PM",
     "fueraHorario": "Striped cells are outside business hours.",
-    "dias": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    "meses": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    "dias": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
+    "meses": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ]
   },
   "estados": {
     "Nuevo": "New",

@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { useGoogleCalendar } from './hooks/useGoogleCalendar'
 import GoogleCalendarBtn from './components/GoogleCalendarBtn'
 import ImportGoogleCalendar from './components/ImportGoogleCalendar'
+import ImportGoogleSheets from './components/ImportGoogleSheets'
 import Auth from './components/Auth'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
@@ -34,7 +35,8 @@ export default function App() {
 
   const [view, setView] = useState('dashboard')
   const [leadModal, setLeadModal] = useState(null)
-  const [importModal, setImportModal] = useState(false) // { lead, preset } | null
+  const [importModal, setImportModal] = useState(false)
+  const [sheetsModal, setSheetsModal] = useState(false) // { lead, preset } | null
   const [vendModal, setVendModal] = useState(null) // { vendedor } | null
   const [saving, setSaving] = useState(false)
 
@@ -106,6 +108,23 @@ export default function App() {
     } catch(e) {
       console.error('Error importando lead:', e)
     }
+  }
+
+  // ---------- Sincronizar con Google Sheets ----------
+  async function onSincronizarSheets(nuevos, actualizados) {
+    let countNuevos = 0, countActualizados = 0
+    for (const lead of nuevos) {
+      try { await createLead(lead); countNuevos++ } catch(e) { console.error(e) }
+    }
+    for (const lead of actualizados) {
+      try {
+        await updateLead(lead._existenteId, { estado: lead.estado, monto_cerrado: lead.monto_cerrado,
+          comision: lead.comision, notas: lead.notas })
+        countActualizados++
+      } catch(e) { console.error(e) }
+    }
+    await reloadLeads()
+    return { nuevos: countNuevos, actualizados: countActualizados }
   }
 
   // ---------- Handlers de leads ----------
@@ -260,6 +279,7 @@ export default function App() {
           onLogout={logout}
           gcal={gcal}
           onImportar={() => setImportModal(true)}
+          onSheetsImport={() => setSheetsModal(true)}
         />
         <main className="main">
           {view === 'dashboard' && (
@@ -310,6 +330,14 @@ export default function App() {
         />
       )}
 
+      {sheetsModal && (
+        <ImportGoogleSheets
+          leads={leads}
+          vendedores={vendedores}
+          onSincronizar={onSincronizarSheets}
+          onClose={() => setSheetsModal(false)}
+        />
+      )}
       {importModal && (
         <ImportGoogleCalendar
           gcal={gcal}

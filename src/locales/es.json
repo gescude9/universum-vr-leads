@@ -1,7 +1,7 @@
 {
   "nav": {
     "dashboard": "Dashboard",
-    "leads": "Leads",
+    "leads": "Cartera de Clientes",
     "vendedores": "Vendedores",
     "calendario": "Calendario",
     "cerrarSesion": "Cerrar sesión",
@@ -36,13 +36,13 @@
     "delTotal": "% del total"
   },
   "leads": {
-    "titulo": "Leads",
-    "subtitulo": "Registra y da seguimiento a cada cumpleaños.",
-    "nuevoLead": "+ Nuevo lead",
+    "titulo": "Cartera de Clientes",
+    "subtitulo": "Registra y da seguimiento a cada cliente.",
+    "nuevoLead": "+ Nuevo cliente",
     "buscar": "Buscar por nombre, teléfono o contacto…",
     "todosEstados": "Todos los estados",
     "todosVendedores": "Todos los vendedores",
-    "sinLeads": "No hay leads que coincidan. Crea el primero con \"Nuevo lead\".",
+    "sinLeads": "No hay clientes que coincidan. Crea el primero con \"+ Nuevo cliente\".",
     "columnas": {
       "cliente": "Cliente",
       "cumpleanos": "Cumpleaños",
@@ -138,8 +138,29 @@
     "nuevoLead": "+ Nuevo lead",
     "horarios": "Horarios: Lun–Jue y Dom 11:00–20:00 · Vie–Sáb 11:00–21:00",
     "fueraHorario": "Las celdas con rayas están fuera de horario.",
-    "dias": ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"],
-    "meses": ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+    "dias": [
+      "Dom",
+      "Lun",
+      "Mar",
+      "Mié",
+      "Jue",
+      "Vie",
+      "Sáb"
+    ],
+    "meses": [
+      "ene",
+      "feb",
+      "mar",
+      "abr",
+      "may",
+      "jun",
+      "jul",
+      "ago",
+      "sep",
+      "oct",
+      "nov",
+      "dic"
+    ]
   },
   "estados": {
     "Nuevo": "Nuevo",
