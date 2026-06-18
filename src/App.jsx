@@ -5,6 +5,8 @@ import {
   createLead, updateLead, deleteLead,
   createVendedor, updateVendedor, deleteVendedor,
 } from './lib/data'
+import { getLeadsSheet, updateLeadSheet, deleteLeadSheet } from './lib/dataSheet'
+import LeadsSheet from './components/LeadsSheet'
 import { COMISION } from './constants'
 import { ultimaHoraInicio, hayConflicto } from './lib/helpers'
 
