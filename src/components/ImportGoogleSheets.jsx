@@ -89,7 +89,26 @@ function parsearFila(row, filaNum) {
 }
 
 function parsearMonto(raw) {
-  const m = raw.replace(/[$,\s]/g, '').match(/[\d]+\.?[\d]*/)
+  if (!raw) return 0
+  let s = raw.trim()
+  // Quitar símbolos de moneda y espacios
+  s = s.replace(/[$\s]/g, '')
+  // Si tiene coma Y punto: formato 1.234,56 → convertir a 1234.56
+  if (s.includes(',') && s.includes('.')) {
+    s = s.replace(/\./g, '').replace(',', '.')
+  }
+  // Si solo tiene coma: puede ser decimal 699,49 → 699.49
+  else if (s.includes(',')) {
+    // Si la coma separa exactamente 2 dígitos al final, es decimal
+    const parts = s.split(',')
+    if (parts[1] && parts[1].length <= 2) {
+      s = s.replace(',', '.')
+    } else {
+      // Si no, es separador de miles: 1,234 → 1234
+      s = s.replace(/,/g, '')
+    }
+  }
+  const m = s.match(/[\d]+\.?[\d]*/)
   return m ? parseFloat(m[0]) : 0
 }
 
