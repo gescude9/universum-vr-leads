@@ -103,36 +103,26 @@ function parsearFecha(raw) {
 }
 
 async function leerSheet() {
-  // Usamos gviz/tq con formato JSON — sin límite de filas, funciona con sheets públicos
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`
+  // Usamos export CSV con formato explícito para evitar que Google evalúe expresiones
+  // como 6475-8905 que se convierte en -2430 con el API gviz
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=tsv&sheet=${encodeURIComponent(SHEET_NAME)}&id=${SHEET_ID}`
   const resp = await fetch(url)
-  if (!resp.ok) throw new Error('No se pudo acceder al sheet. Verifica que esté compartido como público.')
+  if (!resp.ok) {
+    // Fallback al método CSV si TSV falla
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`
+    const resp2 = await fetch(csvUrl)
+    if (!resp2.ok) throw new Error('No se pudo acceder al sheet. Verifica que esté compartido como público.')
+    const text2 = await resp2.text()
+    const rows2 = parseCSV(text2).slice(1)
+    console.log('Total filas (CSV fallback):', rows2.length)
+    return rows2
+  }
   const text = await resp.text()
-  // Google devuelve JSONP: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
-  const jsonStr = text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')
-  const json = JSON.parse(jsonStr)
-  const table = json.table
-  if (!table || !table.rows) throw new Error('No se encontraron datos en el sheet.')
-
-  const cols = table.cols.length
-  const rows = table.rows.map(row => {
-    const arr = []
-    for (let i = 0; i < cols; i++) {
-      const cell = row.c?.[i]
-      let val = ''
-      if (cell != null) {
-        // Siempre preferir el formato legible (cell.f) sobre el valor (cell.v)
-        // Esto evita que "6674-3243" sea interpretado como número negativo
-        if (cell.f != null) val = String(cell.f)
-        else if (cell.v != null) val = String(cell.v)
-      }
-      arr.push(val)
-    }
-    return arr
-  })
-
-  console.log('Total filas del sheet:', rows.length)
-  return rows
+  // TSV: valores separados por tabulador, sin evaluación de expresiones
+  const rows = text.split('\n').map(line => line.split('\t').map(cell => cell.trim()))
+  const dataRows = rows.slice(1).filter(r => r.some(c => c)) // quitar cabecera y vacías
+  console.log('Total filas del sheet (TSV):', dataRows.length)
+  return dataRows
 }
 
 export default function ImportGoogleSheets({ leadsSheet, onSincronizar, onClose }) {
