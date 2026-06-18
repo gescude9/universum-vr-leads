@@ -112,14 +112,32 @@ export default function ImportGoogleSheets({ leadsSheet, onSincronizar, onClose 
     setCargando(true)
     setError('')
     try {
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`
-      const resp = await fetch(csvUrl)
+      // Usamos la API de visualización de Google con paginación para traer TODAS las filas
+      // El export CSV normal tiene límite; gviz/tq con formato JSON no tiene límite de filas
+      const jsonUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}&headers=1`
+      const resp = await fetch(jsonUrl)
       if (!resp.ok) throw new Error('No se pudo acceder al sheet. Verifica que esté compartido como público.')
       const text = await resp.text()
-      const rows = parseCSV(text)
+      // Google devuelve JSONP: google.visualization.Query.setResponse({...})
+      const jsonStr = text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, '')
+      const json = JSON.parse(jsonStr)
+      const table = json.table
+      if (!table || !table.rows) throw new Error('No se encontraron datos.')
 
-      const filas = rows.slice(1).map((r, i) => parsearFila(r, i + 2)).filter(Boolean)
+      // Convertir formato gviz a array de strings (igual que CSV)
+      const cols = table.cols.length
+      const rows = table.rows.map(row => {
+        const arr = []
+        for (let i = 0; i < cols; i++) {
+          const cell = row.c?.[i]
+          arr.push(cell?.v != null ? String(cell.v) : '')
+        }
+        return arr
+      })
+
+      const filas = rows.map((r, i) => parsearFila(r, i + 2)).filter(Boolean)
       if (filas.length === 0) throw new Error('No se encontraron datos.')
+      console.log('Total filas leídas del sheet:', rows.length, '→ leads válidos:', filas.length)
 
       // Comparar con leads existentes por fila_sheet
       const nuevos = []
