@@ -126,14 +126,22 @@ export default function App() {
   // ---------- Sincronizar con Google Sheets → tabla leads_sheet ----------
   async function onSincronizarSheets(nuevos, actualizados) {
     let countNuevos = 0, countActualizados = 0
-    for (const lead of nuevos) {
-      try { await upsertLeadSheet(lead); countNuevos++ } catch(e) { console.error('nuevo:', e) }
-    }
-    for (const lead of actualizados) {
-      try {
-        await updateLeadSheet(lead._id, { estado: lead.estado, monto_venta: lead.monto_venta, notas: lead.notas })
-        countActualizados++
-      } catch(e) { console.error('actualizado:', e) }
+    try {
+      // Insertar todos los nuevos de una sola vez (mucho más rápido)
+      if (nuevos.length > 0) {
+        const { error } = await supabase.from('leads_sheet').insert(nuevos)
+        if (error) console.error('Error inserción masiva:', error)
+        else countNuevos = nuevos.length
+      }
+      // Actualizar los que cambiaron de estado
+      for (const lead of actualizados) {
+        try {
+          await updateLeadSheet(lead._id, { estado: lead.estado, monto_venta: lead.monto_venta, notas: lead.notas })
+          countActualizados++
+        } catch(e) { console.error('actualizado:', e) }
+      }
+    } catch(e) {
+      console.error('Error sincronizando:', e)
     }
     await reloadLeadsSheet()
     return { nuevos: countNuevos, actualizados: countActualizados }
