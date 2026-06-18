@@ -27,6 +27,23 @@ function mapearEstado(raw) {
   return 'Nuevo'
 }
 
+function limpiarTelefono(raw) {
+  if (!raw) return ''
+  let t = raw.trim()
+  // Quitar + al inicio
+  t = t.replace(/^\+/, '')
+  // Quitar prefijos internacionales: 507, 506, 51, 1 seguidos de espacio o guion
+  t = t.replace(/^507[\s\-]?/, '')
+  t = t.replace(/^506[\s\-]?/, '')
+  t = t.replace(/^51[\s\-]?/, '')
+  t = t.replace(/^1[\s\-]?/, '')
+  // Quitar todo lo que no sea dígito
+  t = t.replace(/[^0-9]/g, '')
+  // Si quedó muy largo (más de 8 dígitos para Panama), tomar los últimos 8
+  if (t.length > 8) t = t.slice(-8)
+  return t
+}
+
 function parsearFila(row, filaNum) {
   const nombre = String(row[2] || '').trim()
   if (!nombre || nombre === 'Nombre del Cliente' || nombre.length < 2) return null
@@ -36,13 +53,7 @@ function parsearFila(row, filaNum) {
   const tipoEvento    = String(row[6] || '').trim()
   const personas      = String(row[7] || '').trim()
   const telefonoRaw   = String(row[8] || '').trim()
-  const telefono      = telefonoRaw
-    .replace(/^507[-\s]?/, '')   // quitar prefijo 507
-    .replace(/^51[-\s]?/, '')    // quitar prefijo Peru 51
-    .replace(/^1[-\s]?/, '')     // quitar prefijo +1
-    .replace(/[-\s]/g, '')       // quitar guiones y espacios
-    .replace(/[()]/g, '')        // quitar paréntesis
-    .trim()
+  const telefono      = limpiarTelefono(telefonoRaw)
   const statusRaw     = String(row[9] || '').trim()
   const montoTx       = parsearMonto(String(row[10] || ''))
   const montoTixr     = parsearMonto(String(row[11] || ''))
