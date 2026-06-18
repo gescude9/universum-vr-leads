@@ -12,7 +12,7 @@ const ESTADO_MAP = {
   'perdido':                'Perdido',
   'sin contactar':          'Nuevo',
   'contactado':             'Contactado',
-  'recontactado':           'Seguimiento',
+  'recontactado':           'Recontactado',
   'a espera de respuesta':  'Seguimiento',
   'propuesta a confirmar':  'Cotizado',
   'propuesta':              'Cotizado',
@@ -35,14 +35,21 @@ function parsearFila(row, filaNum) {
   const fechaContacto = String(row[3] || '').trim()
   const tipoEvento    = String(row[6] || '').trim()
   const personas      = String(row[7] || '').trim()
-  const telefono      = String(row[8] || '').trim()
+  const telefonoRaw   = String(row[8] || '').trim()
+  const telefono      = telefonoRaw
+    .replace(/^507[-\s]?/, '')   // quitar prefijo 507
+    .replace(/^51[-\s]?/, '')    // quitar prefijo Peru 51
+    .replace(/^1[-\s]?/, '')     // quitar prefijo +1
+    .replace(/[-\s]/g, '')       // quitar guiones y espacios
+    .replace(/[()]/g, '')        // quitar paréntesis
+    .trim()
   const statusRaw     = String(row[9] || '').trim()
   const montoTx       = parsearMonto(String(row[10] || ''))
   const montoTixr     = parsearMonto(String(row[11] || ''))
   const notaExtra     = String(row[12] || '').trim()
   const fechaEvento   = parsearFecha(String(row[5] || ''))
   const estado        = mapearEstado(statusRaw)
-  const montoVenta    = montoTx || montoTixr || 0
+  const montoVenta    = estado === 'Cerrado' ? (montoTx || montoTixr || 0) : 0
 
   const notas = [
     row[3] ? `Motivo: ${String(row[3]).trim().slice(0, 120)}` : '',

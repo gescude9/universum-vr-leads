@@ -5,7 +5,7 @@
 export const COMISION = 0.10 // 10% sobre el monto cerrado
 
 export const ESTADOS = [
-  'Nuevo', 'Contactado', 'Cotizado', 'Seguimiento', 'Cerrado', 'Perdido',
+  'Nuevo', 'Contactado', 'Cotizado', 'Seguimiento', 'Recontactado', 'Cerrado', 'Perdido',
 ]
 
 export const PAQUETES = ['Gaming', 'Double Gaming', 'Full VR']
