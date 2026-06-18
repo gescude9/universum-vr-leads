@@ -71,15 +71,22 @@ export default function App() {
     let activo = true
     ;(async () => {
       try {
-        const [v, l, ls] = await Promise.all([getVendedores(), getLeads(), getLeadsSheet()])
+        // Cargamos por separado para que un error no bloquee las demás tablas
+        const [v, l] = await Promise.all([getVendedores(), getLeads()])
         if (!activo) return
         setVendedores(v)
         setLeads(l)
-        setLeadsSheet(ls)
       } catch (e) {
         notify(t('common.errorDatos', { msg: e.message }), 'bad')
       } finally {
         if (activo) setDataReady(true)
+      }
+      // Cargar leads_sheet por separado (no bloquea si falla)
+      try {
+        const ls = await getLeadsSheet()
+        if (activo) setLeadsSheet(ls)
+      } catch (e) {
+        console.warn('leads_sheet no disponible aún:', e.message)
       }
     })()
 
