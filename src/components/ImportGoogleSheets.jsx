@@ -28,25 +28,24 @@ function mapearEstado(raw) {
 }
 
 function parsearFila(row, filaNum) {
-  const nombre = (row[2] || '').trim()
+  const nombre = String(row[2] || '').trim()
   if (!nombre || nombre === 'Nombre del Cliente' || nombre.length < 2) return null
-  if (/^(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)$/i.test(nombre)) return null
-  if (/^(JULIO|JUNIO|MAYO|ABRIL)$/.test(nombre)) return null
+  if (/^(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|JULIO|JUNIO|MAYO|ABRIL)$/i.test(nombre)) return null
 
-  const fechaContacto = (row[3] || '').trim()
-  const tipoEvento    = (row[6] || '').trim()
-  const personas      = (row[7] || '').trim()
-  const telefono      = (row[8] || '').trim()
-  const statusRaw     = (row[9] || '').trim()
-  const montoTx       = parsearMonto(row[10] || '')
-  const montoTixr     = parsearMonto(row[11] || '')
-  const notaExtra     = (row[12] || '').trim()
-  const fechaEvento   = parsearFecha(row[5] || '')
+  const fechaContacto = String(row[3] || '').trim()
+  const tipoEvento    = String(row[6] || '').trim()
+  const personas      = String(row[7] || '').trim()
+  const telefono      = String(row[8] || '').trim()
+  const statusRaw     = String(row[9] || '').trim()
+  const montoTx       = parsearMonto(String(row[10] || ''))
+  const montoTixr     = parsearMonto(String(row[11] || ''))
+  const notaExtra     = String(row[12] || '').trim()
+  const fechaEvento   = parsearFecha(String(row[5] || ''))
   const estado        = mapearEstado(statusRaw)
   const montoVenta    = montoTx || montoTixr || 0
 
   const notas = [
-    row[3] ? `Motivo: ${(row[3]||'').trim().slice(0,120)}` : '',
+    row[3] ? `Motivo: ${String(row[3]).trim().slice(0, 120)}` : '',
     notaExtra ? `Nota: ${notaExtra}` : '',
     statusRaw ? `Estado original: ${statusRaw}` : '',
     montoTx   ? `Pago transferencia: $${montoTx}` : '',
@@ -54,22 +53,22 @@ function parsearFila(row, filaNum) {
   ].filter(Boolean).join('\n')
 
   return {
-    fila_sheet:    filaNum,
+    fila_sheet:     filaNum,
     nombre,
     telefono,
-    contacto:      '',
+    contacto:       '',
     fecha_contacto: fechaContacto,
-    fecha_evento:  fechaEvento || null,
-    tipo_evento:   tipoEvento,
+    fecha_evento:   fechaEvento || null,
+    tipo_evento:    tipoEvento,
     personas,
     estado,
-    monto_venta:   montoVenta,
+    monto_venta:    montoVenta,
     notas,
   }
 }
 
 function parsearMonto(raw) {
-  const m = String(raw).replace(/[$,\s]/g, '').match(/[\d]+\.?[\d]*/)
+  const m = raw.replace(/[$,\s]/g, '').match(/[\d]+\.?[\d]*/)
   return m ? parseFloat(m[0]) : 0
 }
 
@@ -82,22 +81,35 @@ function parsearFecha(raw) {
   return ''
 }
 
-function parseCSV(text) {
-  const rows = []
-  const lines = text.split('\n')
-  for (const line of lines) {
-    if (!line.trim()) continue
-    const row = []
-    let cur = '', inQ = false
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i]
-      if (c === '"') { inQ = !inQ }
-      else if (c === ',' && !inQ) { row.push(cur.trim()); cur = '' }
-      else cur += c
+async function leerSheet() {
+  // Usamos gviz/tq con formato JSON — sin límite de filas, funciona con sheets públicos
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`
+  const resp = await fetch(url)
+  if (!resp.ok) throw new Error('No se pudo acceder al sheet. Verifica que esté compartido como público.')
+  const text = await resp.text()
+  // Google devuelve JSONP: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
+  const jsonStr = text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')
+  const json = JSON.parse(jsonStr)
+  const table = json.table
+  if (!table || !table.rows) throw new Error('No se encontraron datos en el sheet.')
+
+  const cols = table.cols.length
+  const rows = table.rows.map(row => {
+    const arr = []
+    for (let i = 0; i < cols; i++) {
+      const cell = row.c?.[i]
+      let val = ''
+      if (cell?.v != null) {
+        // Las fechas en gviz vienen como Date(año,mes,dia)
+        if (cell.f) val = cell.f  // usar el formato legible si existe
+        else val = String(cell.v)
+      }
+      arr.push(val)
     }
-    row.push(cur.trim())
-    rows.push(row)
-  }
+    return arr
+  })
+
+  console.log('Total filas del sheet:', rows.length)
   return rows
 }
 
@@ -112,34 +124,10 @@ export default function ImportGoogleSheets({ leadsSheet, onSincronizar, onClose 
     setCargando(true)
     setError('')
     try {
-      // Usamos la API de visualización de Google con paginación para traer TODAS las filas
-      // El export CSV normal tiene límite; gviz/tq con formato JSON no tiene límite de filas
-      const jsonUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}&headers=1`
-      const resp = await fetch(jsonUrl)
-      if (!resp.ok) throw new Error('No se pudo acceder al sheet. Verifica que esté compartido como público.')
-      const text = await resp.text()
-      // Google devuelve JSONP: google.visualization.Query.setResponse({...})
-      const jsonStr = text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, '')
-      const json = JSON.parse(jsonStr)
-      const table = json.table
-      if (!table || !table.rows) throw new Error('No se encontraron datos.')
-
-      // Convertir formato gviz a array de strings (igual que CSV)
-      const cols = table.cols.length
-      const rows = table.rows.map(row => {
-        const arr = []
-        for (let i = 0; i < cols; i++) {
-          const cell = row.c?.[i]
-          arr.push(cell?.v != null ? String(cell.v) : '')
-        }
-        return arr
-      })
-
+      const rows = await leerSheet()
       const filas = rows.map((r, i) => parsearFila(r, i + 2)).filter(Boolean)
-      if (filas.length === 0) throw new Error('No se encontraron datos.')
-      console.log('Total filas leídas del sheet:', rows.length, '→ leads válidos:', filas.length)
+      if (filas.length === 0) throw new Error('No se encontraron leads válidos.')
 
-      // Comparar con leads existentes por fila_sheet
       const nuevos = []
       const actualizados = []
       const sinCambios = []
@@ -184,9 +172,8 @@ export default function ImportGoogleSheets({ leadsSheet, onSincronizar, onClose 
           {paso === 1 && (
             <div>
               <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 16 }}>
-                Se leerá la hoja <strong style={{ color: 'var(--text)' }}>Planilla</strong> y se sincronizarán
-                todos los leads en el tab <strong style={{ color: 'var(--text)' }}>Leads</strong>.
-                Los nuevos se agregan y los que cambiaron de estado se actualizan.
+                Se leerá la hoja <strong style={{ color: 'var(--text)' }}>Planilla</strong> completa
+                y se sincronizarán todos los leads. Los nuevos se agregan y los que cambiaron de estado se actualizan.
               </p>
               <div style={{ background: 'rgba(34,211,255,.06)', border: '1px solid rgba(34,211,255,.2)',
                 borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 13 }}>

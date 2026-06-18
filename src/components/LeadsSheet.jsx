@@ -11,7 +11,7 @@ const TIPO_COLORS = {
   'Universidad':     { bg: 'rgba(255,78,205,.12)', color: 'var(--pink)' },
 }
 
-export default function LeadsSheet({ leads, onSync, onEdit, onDelete, syncing }) {
+export default function LeadsSheet({ leads, onSync, onDelete, syncing }) {
   const { t } = useTranslation()
   const [q, setQ] = useState('')
   const [fe, setFe] = useState('')
