@@ -8,10 +8,11 @@ export default function Sidebar({ view, setView, email, onLogout, gcal, onImport
   const { t } = useTranslation()
 
   const ITEMS = [
-    { id: 'dashboard', label: t('nav.dashboard'), ic: '◎' },
-    { id: 'leads', label: t('nav.leads'), ic: '★' },
-    { id: 'vendedores', label: t('nav.vendedores'), ic: '⬡' },
-    { id: 'calendario', label: t('nav.calendario'), ic: '▦' },
+    { id: 'dashboard',   label: t('nav.dashboard'),   ic: '◎' },
+    { id: 'leadssheet',  label: 'Leads',               ic: '⚡' },
+    { id: 'leads',       label: t('nav.leads'),        ic: '★' },
+    { id: 'vendedores',  label: t('nav.vendedores'),   ic: '⬡' },
+    { id: 'calendario',  label: t('nav.calendario'),   ic: '▦' },
   ]
 
   return (

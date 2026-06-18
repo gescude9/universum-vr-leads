@@ -30,13 +30,15 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false)
 
   const [leads, setLeads] = useState([])
+  const [leadsSheet, setLeadsSheet] = useState([])
   const [vendedores, setVendedores] = useState([])
   const [dataReady, setDataReady] = useState(false)
 
   const [view, setView] = useState('dashboard')
   const [leadModal, setLeadModal] = useState(null)
   const [importModal, setImportModal] = useState(false)
-  const [sheetsModal, setSheetsModal] = useState(false) // { lead, preset } | null
+  const [sheetsModal, setSheetsModal] = useState(false)
+  const [syncing, setSyncing] = useState(false) // { lead, preset } | null
   const [vendModal, setVendModal] = useState(null) // { vendedor } | null
   const [saving, setSaving] = useState(false)
 
@@ -69,10 +71,11 @@ export default function App() {
     let activo = true
     ;(async () => {
       try {
-        const [v, l] = await Promise.all([getVendedores(), getLeads()])
+        const [v, l, ls] = await Promise.all([getVendedores(), getLeads(), getLeadsSheet()])
         if (!activo) return
         setVendedores(v)
         setLeads(l)
+        setLeadsSheet(ls)
       } catch (e) {
         notify(t('common.errorDatos', { msg: e.message }), 'bad')
       } finally {
@@ -85,6 +88,8 @@ export default function App() {
       .channel('universum-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' },
         () => { getLeads().then(l => setLeads(l)) })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads_sheet' },
+        () => { getLeadsSheet().then(ls => setLeadsSheet(ls)) })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'vendedores' },
         () => { getVendedores().then(v => setVendedores(v)) })
       .subscribe()
@@ -96,6 +101,7 @@ export default function App() {
   }, [session])
 
   const reloadLeads = async () => setLeads(await getLeads())
+  const reloadLeadsSheet = async () => setLeadsSheet(await getLeadsSheet())
   const reloadVend = async () => setVendedores(await getVendedores())
 
   // ---------- Importar desde Google Calendar ----------
@@ -110,21 +116,25 @@ export default function App() {
     }
   }
 
-  // ---------- Sincronizar con Google Sheets ----------
+  // ---------- Sincronizar con Google Sheets → tabla leads_sheet ----------
   async function onSincronizarSheets(nuevos, actualizados) {
     let countNuevos = 0, countActualizados = 0
     for (const lead of nuevos) {
-      try { await createLead(lead); countNuevos++ } catch(e) { console.error(e) }
+      try { await upsertLeadSheet(lead); countNuevos++ } catch(e) { console.error('nuevo:', e) }
     }
     for (const lead of actualizados) {
       try {
-        await updateLead(lead._existenteId, { estado: lead.estado, monto_cerrado: lead.monto_cerrado,
-          comision: lead.comision, notas: lead.notas })
+        await updateLeadSheet(lead._id, { estado: lead.estado, monto_venta: lead.monto_venta, notas: lead.notas })
         countActualizados++
-      } catch(e) { console.error(e) }
+      } catch(e) { console.error('actualizado:', e) }
     }
-    await reloadLeads()
+    await reloadLeadsSheet()
     return { nuevos: countNuevos, actualizados: countActualizados }
+  }
+
+  async function onDeleteLeadSheet(lead) {
+    if (!confirm(`¿Eliminar el lead de "${lead.nombre}"?`)) return
+    try { await deleteLeadSheet(lead.id); await reloadLeadsSheet() } catch(e) { notify('Error: ' + e.message, 'bad') }
   }
 
   // ---------- Handlers de leads ----------
@@ -280,6 +290,7 @@ export default function App() {
           gcal={gcal}
           onImportar={() => setImportModal(true)}
           onSheetsImport={() => setSheetsModal(true)}
+          onSyncDirect={async () => { setSyncing(true); setSheetsModal(true); setSyncing(false) }}
         />
         <main className="main">
           {view === 'dashboard' && (
@@ -292,6 +303,14 @@ export default function App() {
               onNew={() => openNewLead()}
               onEdit={openEditLead}
               onDelete={onDeleteLead}
+            />
+          )}
+          {view === 'leadssheet' && (
+            <LeadsSheet
+              leads={leadsSheet}
+              onSync={() => setSheetsModal(true)}
+              onDelete={onDeleteLeadSheet}
+              syncing={syncing}
             />
           )}
           {view === 'vendedores' && (
@@ -332,10 +351,9 @@ export default function App() {
 
       {sheetsModal && (
         <ImportGoogleSheets
-          leads={leads}
-          vendedores={vendedores}
+          leadsSheet={leadsSheet}
           onSincronizar={onSincronizarSheets}
-          onClose={() => setSheetsModal(false)}
+          onClose={() => { setSheetsModal(false); setView('leadssheet') }}
         />
       )}
       {importModal && (
