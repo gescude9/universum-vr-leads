@@ -53,6 +53,9 @@ function parsearFila(row, filaNum) {
   const tipoEvento    = String(row[6] || '').trim()
   const personas      = String(row[7] || '').trim()
   const telefonoRaw   = String(row[8] || '').trim()
+  if (telefonoRaw && !limpiarTelefono(telefonoRaw)) {
+    console.log('TELEFONO VACIO:', JSON.stringify(row[8]), '→', telefonoRaw)
+  }
   const telefono      = limpiarTelefono(telefonoRaw)
   const statusRaw     = String(row[9] || '').trim()
   const montoTx       = parsearMonto(String(row[10] || ''))
