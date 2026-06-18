@@ -117,10 +117,11 @@ async function leerSheet() {
     for (let i = 0; i < cols; i++) {
       const cell = row.c?.[i]
       let val = ''
-      if (cell?.v != null) {
-        // Las fechas en gviz vienen como Date(año,mes,dia)
-        if (cell.f) val = cell.f  // usar el formato legible si existe
-        else val = String(cell.v)
+      if (cell != null) {
+        // Siempre preferir el formato legible (cell.f) sobre el valor (cell.v)
+        // Esto evita que "6674-3243" sea interpretado como número negativo
+        if (cell.f != null) val = String(cell.f)
+        else if (cell.v != null) val = String(cell.v)
       }
       arr.push(val)
     }
