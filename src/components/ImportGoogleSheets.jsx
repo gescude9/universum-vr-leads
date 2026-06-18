@@ -202,7 +202,7 @@ export default function ImportGoogleSheets({ leadsSheet, onSincronizar, onClose 
                   <span>Sin Contactar → <strong style={{color:'var(--blue)'}}>Nuevo</strong></span>
                   <span>No Concretó / Descalificado → <strong style={{color:'var(--bad)'}}>Perdido</strong></span>
                   <span>Contactado → <strong style={{color:'#6ec6ff'}}>Contactado</strong></span>
-                  <span>Recontactado / A Espera → <strong style={{color:'var(--warn)'}}>Seguimiento</strong></span>
+                  <span>Recontactado → <strong style={{color:'#c084fc'}}>Recontactado</strong></span>
                   <span>Propuesta a Confirmar → <strong style={{color:'var(--purple)'}}>Cotizado</strong></span>
                 </div>
               </div>
