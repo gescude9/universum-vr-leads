@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { COMISION, ESTADOS, PAQUETES, PREMIUM, DURACION } from '../constants'
 import { precioDe, desglosePrecio, horasDe, todayISO, money } from '../lib/helpers'
 
-export default function LeadModal({ lead, preset, vendedores, onSave, onClose, saving }) {
+export default function LeadModal({ lead, preset, vendedores, onSave, onClose, onDelete, saving }) {
   const { t } = useTranslation()
   const initFecha = lead?.fecha || preset?.fecha || todayISO()
   const initHora = lead?.hora || preset?.hora || '11:00'
