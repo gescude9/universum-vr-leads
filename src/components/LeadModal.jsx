@@ -147,6 +147,7 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, s
         </div>
         <div className="modal-foot">
           <button className="btn btn-ghost" onClick={onClose}>{t('leadModal.cancelar')}</button>
+          {lead && onDelete && <button className="btn btn-danger" onClick={() => { onDelete(lead); onClose() }} style={{marginRight:'auto'}}>Eliminar lead</button>}
           <button className="btn btn-primary" onClick={submit} disabled={saving}>
             {saving ? t('leadModal.guardando') : t('leadModal.guardar')}
           </button>

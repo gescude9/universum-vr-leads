@@ -350,6 +350,7 @@ export default function App() {
           preset={leadModal.preset}
           vendedores={vendedores}
           onSave={onSaveLead}
+          onDelete={onDeleteLead}
           onClose={() => setLeadModal(null)}
           saving={saving}
         />
