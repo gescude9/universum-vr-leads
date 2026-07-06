@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { COMISION, ESTADOS, PAQUETES, PERSONAS, PREMIUM, DURACION } from '../constants'
-import { precioDe, horasDe, todayISO, money } from '../lib/helpers'
+import { COMISION, ESTADOS, PAQUETES, PREMIUM, DURACION } from '../constants'
+import { precioDe, desglosePrecio, horasDe, todayISO, money } from '../lib/helpers'
 
 export default function LeadModal({ lead, preset, vendedores, onSave, onClose, saving }) {
   const { t } = useTranslation()
@@ -30,7 +30,10 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, s
   const horas = horasDe(f.fecha)
   const isFull = f.paquete === 'Full VR'
   const precio = precioDe(f.paquete, f.personas)
-  const comision = +((Number(f.monto_cerrado) || 0) * COMISION).toFixed(2)
+  const desglose = desglosePrecio(f.paquete, f.personas)
+  const vendedorObj = vendedores.find(v => v.id === f.vendedor)
+  const pct = vendedorObj?.comision_pct != null ? Number(vendedorObj.comision_pct) / 100 : COMISION
+  const comision = +((Number(f.monto_cerrado) || 0) * pct).toFixed(2)
 
   function setFecha(v) {
     const lista = horasDe(v)
@@ -38,10 +41,12 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, s
     setF(p => ({ ...p, fecha: v, hora }))
   }
   function setPaquete(v) {
-    setF(p => ({ ...p, paquete: v, monto_estimado: precioDe(v, p.personas), premium: v === 'Full VR' ? p.premium : '' }))
+    const nuevoPrecio = precioDe(v, f.personas)
+    setF(p => ({ ...p, paquete: v, monto_estimado: nuevoPrecio, premium: v === 'Full VR' ? p.premium : '' }))
   }
   function setPersonas(v) {
-    setF(p => ({ ...p, personas: Number(v), monto_estimado: precioDe(p.paquete, v) }))
+    const n = Math.max(1, parseInt(v) || 1)
+    setF(p => ({ ...p, personas: n, monto_estimado: precioDe(p.paquete, n) }))
   }
 
   async function submit() {
@@ -63,7 +68,7 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, s
       <div className="modal">
         <div className="modal-head">
           <h2>{lead ? t('leadModal.editarLead') : t('leadModal.nuevoLead')}</h2>
-          <button className="x" onClick={onClose}>×</button>
+          <button className="x" onClick={onClose}>x</button>
         </div>
         <div className="modal-body">
           <div className="field"><label>{t('leadModal.nombre')}</label>
@@ -84,13 +89,17 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, s
               {horas.map(h => <option key={h} value={h}>{h}</option>)}
             </select></div>
           <div className="field"><label>{t('leadModal.personas')}</label>
-            <select value={f.personas} onChange={e => setPersonas(e.target.value)}>
-              {PERSONAS.map(p => <option key={p} value={p}>{t('leadModal.personas_n', { n: p })}</option>)}
-            </select></div>
+            <input
+              type="number" min="1" max="200" step="1"
+              value={f.personas}
+              onChange={e => setPersonas(e.target.value)}
+              placeholder="Ej. 7"
+            /></div>
           <div className="field"><label>{t('leadModal.paquete')}</label>
             <select value={f.paquete} onChange={e => setPaquete(e.target.value)}>
               {PAQUETES.map(p => <option key={p} value={p}>{p} · {DURACION[p]}h</option>)}
             </select></div>
+
           {isFull && (
             <div className="field full"><label>{t('leadModal.premium')}</label>
               <select value={f.premium} onChange={e => upd('premium', e.target.value)}>
@@ -98,24 +107,37 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, s
                 {PREMIUM.map(p => <option key={p} value={p}>{p}</option>)}
               </select></div>
           )}
+
           <div className="calc-box">
-            <div><div className="hint" style={{ color: 'var(--muted)' }}>{t('leadModal.precioPaquete')}</div>
-              <div className="price">{money(precio)}</div></div>
-            <div style={{ textAlign: 'right' }}><div className="hint" style={{ color: 'var(--muted)' }}>{t('leadModal.comision10')}</div>
-              <div className="com">{money(comision)}</div></div>
+            <div>
+              <div className="hint" style={{ color: 'var(--muted)' }}>{t('leadModal.precioPaquete')}</div>
+              <div className="price">{money(precio)}</div>
+              {desglose && desglose.adicionales > 0 && (
+                <div className="hint" style={{ color: 'var(--muted)', marginTop: 4, fontSize: 11 }}>
+                  Base {desglose.base}p {money(desglose.precioBase)} + {desglose.adicionales} adicional(es) {money(desglose.precioAdicional)}
+                </div>
+              )}
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div className="hint" style={{ color: 'var(--muted)' }}>
+                {t('leadModal.comision10')} ({vendedorObj?.comision_pct ?? 10}%)
+              </div>
+              <div className="com">{money(comision)}</div>
+            </div>
           </div>
+
           <div className="field"><label>{t('leadModal.estado')}</label>
             <select value={f.estado} onChange={e => upd('estado', e.target.value)}>
-              {ESTADOS.map(e => <option key={e} value={e}>{t(`estados.${e}`)}</option>)}
+              {ESTADOS.map(e => <option key={e} value={e}>{t('estados.' + e, e)}</option>)}
             </select></div>
           <div className="field"><label>{t('leadModal.estimado')}</label>
-            <input type="number" min="0" step="1" value={f.monto_estimado}
+            <input type="number" min="0" step="0.01" value={f.monto_estimado}
               onChange={e => upd('monto_estimado', e.target.value)} placeholder="0" /></div>
           <div className="field full">
             <label>{t('leadModal.cerrado')}{' '}
               <span className="hint">{f.estado === 'Cerrado' ? t('leadModal.cerradoHint') : t('leadModal.cerradoHint2')}</span>
             </label>
-            <input type="number" min="0" step="1" value={f.monto_cerrado}
+            <input type="number" min="0" step="0.01" value={f.monto_cerrado}
               onChange={e => upd('monto_cerrado', e.target.value)} placeholder="0" />
             <div className="hint">{t('leadModal.comisionHint')}</div>
           </div>
