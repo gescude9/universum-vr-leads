@@ -166,8 +166,6 @@ export default function App() {
       if (parseInt(payload.hora) > ultimaHoraInicio(payload.fecha)) {
         notify(t('leadModal.errorHora'), 'bad'); return false
       }
-      const c = hayConflicto(leads, payload.fecha, payload.hora, payload.paquete, id)
-      if (c) { notify(t('leadModal.errorConflicto', { nombre: c.nombre, hora: c.hora }), 'bad'); return false }
     }
     if (payload.estado === 'Cerrado' && (Number(payload.monto_cerrado) || 0) <= 0) {
       notify(t('leadModal.errorCerrado'), 'bad'); return false
@@ -175,7 +173,7 @@ export default function App() {
 
     payload.comision =
       payload.estado === 'Cerrado'
-        ? +((Number(payload.monto_cerrado) || 0) * COMISION).toFixed(2)
+        ? +((Number(payload.monto_cerrado) || 0) * (vendedores.find(v => v.id === payload.vendedor)?.comision_pct / 100 || COMISION)).toFixed(2)
         : 0
 
     try {
