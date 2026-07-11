@@ -343,7 +343,7 @@ export default function App() {
             />
           )}
           {view === 'calendario' && (
-            <Calendario leads={leads} onNew={openNewLead} onEdit={openEditLead} />
+            <Calendario leads={leads} onNew={openNewLead} onEdit={openEditLead} isViewer={isViewer} />
           )}
         </main>
       </div>

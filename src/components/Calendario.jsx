@@ -5,7 +5,7 @@ import { isoOf, inicioSemana, etiquetaHora, ultimaHoraInicio, todayISO } from '.
 
 const GRID_START = 11, GRID_END = 22, ROW_H = 56
 
-export default function Calendario({ leads, onNew, onEdit }) {
+export default function Calendario({ leads, onNew, onEdit, isViewer }) {
   const { t } = useTranslation()
   const [calCurrent, setCalCurrent] = useState(todayISO())
 
@@ -43,7 +43,7 @@ export default function Calendario({ leads, onNew, onEdit }) {
         <button className="btn btn-ghost btn-sm" onClick={() => setCalCurrent(todayISO())}>{t('calendario.hoy')}</button>
         <input type="date" value={calCurrent} onChange={e => e.target.value && setCalCurrent(e.target.value)} />
         <div style={{ flex: 1 }}></div>
-        <button className="btn btn-primary btn-sm" onClick={() => onNew({ fecha: calCurrent, hora: '11:00' })}>{t('calendario.nuevoLead')}</button>
+        {!isViewer && <button className="btn btn-primary btn-sm" onClick={() => onNew({ fecha: calCurrent, hora: '11:00' })}>{t('calendario.nuevoLead')}</button>
       </div>
       <div className="cal-legend">
         <span><b>{t('calendario.horarios').split(':')[0]}:</b>{t('calendario.horarios').split(':').slice(1).join(':')}</span>
@@ -74,7 +74,7 @@ export default function Calendario({ leads, onNew, onEdit }) {
                 <div className="gcal-col" key={iso}>
                   {horasLabels.map(h => (
                     <div key={h} className={`gcal-cell ${h > last ? 'closed' : ''}`}
-                      onClick={() => h <= last && onNew({ fecha: iso, hora: String(h).padStart(2, '0') + ':00' })}></div>
+                      onClick={() => !isViewer && h <= last && onNew({ fecha: iso, hora: String(h).padStart(2, '0') + ':00' })}></div>
                   ))}
                   {eventos.map(l => {
                     const s = parseInt(l.hora), dur = DURACION[l.paquete] || 1
