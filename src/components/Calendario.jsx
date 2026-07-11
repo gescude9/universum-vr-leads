@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { DURACION } from '../constants'
 import { isoOf, inicioSemana, etiquetaHora, ultimaHoraInicio, todayISO } from '../lib/helpers'
 
-const GRID_START = 11, GRID_END = 22, ROW_H = 56
+const GRID_START = 11
+const GRID_END = 22
+const ROW_H = 56
 
 export default function Calendario({ leads, onNew, onEdit, isViewer }) {
   const { t } = useTranslation()
@@ -14,39 +16,52 @@ export default function Calendario({ leads, onNew, onEdit, isViewer }) {
 
   const start = inicioSemana(calCurrent)
   const dias = []
-  for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); dias.push(d) }
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start)
+    d.setDate(start.getDate() + i)
+    dias.push(d)
+  }
 
   const a = dias[0], b = dias[6]
   const label = a.getMonth() === b.getMonth()
-    ? `${a.getDate()} – ${b.getDate()} ${MESES[b.getMonth()]} ${b.getFullYear()}`
-    : `${a.getDate()} ${MESES[a.getMonth()]} – ${b.getDate()} ${MESES[b.getMonth()]} ${b.getFullYear()}`
+    ? `${a.getDate()} - ${b.getDate()} ${MESES[b.getMonth()]} ${b.getFullYear()}`
+    : `${a.getDate()} ${MESES[a.getMonth()]} - ${b.getDate()} ${MESES[b.getMonth()]} ${b.getFullYear()}`
 
   const hoy = todayISO()
   const horasLabels = []
   for (let h = GRID_START; h < GRID_END; h++) horasLabels.push(h)
 
   function shiftWeek(d) {
-    const dt = new Date(calCurrent + 'T00:00'); dt.setDate(dt.getDate() + d); setCalCurrent(isoOf(dt))
+    const dt = new Date(calCurrent + 'T00:00')
+    dt.setDate(dt.getDate() + d)
+    setCalCurrent(isoOf(dt))
   }
 
   return (
     <section className="view">
       <div className="page-head">
-        <div><h1>{t('calendario.titulo')}</h1><p>{t('calendario.subtitulo')}</p></div>
+        <div>
+          <h1>{t('calendario.titulo')}</h1>
+          <p>{t('calendario.subtitulo')}</p>
+        </div>
       </div>
       <div className="cal-controls">
         <div className="cal-nav">
-          <button onClick={() => shiftWeek(-7)}>‹</button>
-          <button onClick={() => shiftWeek(7)}>›</button>
+          <button onClick={() => shiftWeek(-7)}>&#8249;</button>
+          <button onClick={() => shiftWeek(7)}>&#8250;</button>
         </div>
         <div className="cal-label">{label}</div>
         <button className="btn btn-ghost btn-sm" onClick={() => setCalCurrent(todayISO())}>{t('calendario.hoy')}</button>
         <input type="date" value={calCurrent} onChange={e => e.target.value && setCalCurrent(e.target.value)} />
         <div style={{ flex: 1 }}></div>
-        {!isViewer && <button className="btn btn-primary btn-sm" onClick={() => onNew({ fecha: calCurrent, hora: '11:00' })}>{t('calendario.nuevoLead')}</button>
+        {!isViewer && (
+          <button className="btn btn-primary btn-sm" onClick={() => onNew({ fecha: calCurrent, hora: '11:00' })}>
+            {t('calendario.nuevoLead')}
+          </button>
+        )}
       </div>
       <div className="cal-legend">
-        <span><b>{t('calendario.horarios').split(':')[0]}:</b>{t('calendario.horarios').split(':').slice(1).join(':')}</span>
+        <span><b>Horarios:</b> Lun-Jue y Dom 11:00-20:00 · Vie-Sab 11:00-21:00</span>
         <span>{t('calendario.fueraHorario')}</span>
       </div>
       <div className="gcal-wrap">
@@ -57,7 +72,8 @@ export default function Calendario({ leads, onNew, onEdit, isViewer }) {
               const iso = isoOf(d)
               return (
                 <div key={iso} className={`dh ${iso === hoy ? 'today' : ''}`}>
-                  <small>{DOW[d.getDay()]}</small><b>{d.getDate()}</b>
+                  <small>{DOW[d.getDay()]}</small>
+                  <b>{d.getDate()}</b>
                 </div>
               )
             })}
@@ -73,16 +89,21 @@ export default function Calendario({ leads, onNew, onEdit, isViewer }) {
               return (
                 <div className="gcal-col" key={iso}>
                   {horasLabels.map(h => (
-                    <div key={h} className={`gcal-cell ${h > last ? 'closed' : ''}`}
-                      onClick={() => !isViewer && h <= last && onNew({ fecha: iso, hora: String(h).padStart(2, '0') + ':00' })}></div>
+                    <div key={h}
+                      className={`gcal-cell ${h > last ? 'closed' : ''}`}
+                      onClick={() => !isViewer && h <= last && onNew({ fecha: iso, hora: String(h).padStart(2, '0') + ':00' })}>
+                    </div>
                   ))}
                   {eventos.map(l => {
-                    const s = parseInt(l.hora), dur = DURACION[l.paquete] || 1
+                    const s = parseInt(l.hora)
+                    const dur = DURACION[l.paquete] || 1
                     const top = (s - GRID_START) * ROW_H
                     const alto = Math.max(Math.min(dur, GRID_END - s) * ROW_H - 4, 24)
                     return (
-                      <div key={l.id} className={`gc-event st-${l.estado}`}
-                        style={{ top, height: alto }} title={`${l.nombre} · ${l.hora}`}
+                      <div key={l.id}
+                        className={`gc-event st-${l.estado}`}
+                        style={{ top, height: alto }}
+                        title={`${l.nombre} · ${l.hora}`}
                         onClick={() => onEdit(l)}>
                         <b>{l.nombre}</b>
                         <span className="pk">{l.hora} · {l.paquete} · {l.personas}p</span>
