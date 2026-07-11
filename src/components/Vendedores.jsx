@@ -65,8 +65,8 @@ export default function Vendedores({ vendedores, leads, onNew, onEdit, onDelete,
                       <div className="sub" style={{ color: 'var(--muted)' }}>{pct}%</div>
                     </td>
                     <td style={{ whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => onEdit(v)}>{t('vendedores.editar')}</button>{' '}
-                      <button className="btn btn-danger btn-sm" onClick={() => onDelete(v)}>{t('vendedores.eliminar')}</button>
+                      {!isViewer && <button className="btn btn-ghost btn-sm" onClick={() => onEdit(v)}>{t('vendedores.editar')}</button>}{' '}
+                      {!isViewer && <button className="btn btn-danger btn-sm" onClick={() => onDelete(v)}>{t('vendedores.eliminar')}</button>}
                     </td>
                   </tr>
                   {isOpen && (
