@@ -42,7 +42,8 @@ export default function App() {
   const [leadModal, setLeadModal] = useState(null)
   const [importModal, setImportModal] = useState(false)
   const [sheetsModal, setSheetsModal] = useState(false)
-  const [syncing, setSyncing] = useState(false) // { lead, preset } | null
+  const [syncing, setSyncing] = useState(false)
+  const [filtroEstadoLeads, setFiltroEstadoLeads] = useState("") // { lead, preset } | null
   const [vendModal, setVendModal] = useState(null) // { vendedor } | null
   const [saving, setSaving] = useState(false)
 
@@ -312,7 +313,7 @@ export default function App() {
         />
         <main className="main">
           {view === 'dashboard' && (
-            <Dashboard leads={leads} vendedores={vendedores} onNewLead={() => openNewLead()} isViewer={isViewer} />
+            <Dashboard leads={leads} vendedores={vendedores} onNewLead={() => openNewLead()} isViewer={isViewer} setView={setView} setFiltroEstado={setFiltroEstadoLeads} />
           )}
           {view === 'leads' && (
             <Leads
