@@ -27,9 +27,10 @@ import Toast from './components/Toast'
 
 export default function App() {
   const { t } = useTranslation()
-  const isViewer = session?.user?.user_metadata?.rol === "viewer"
+  
   const gcal = useGoogleCalendar()
   const [session, setSession] = useState(null)
+  const isViewer = session?.user?.user_metadata?.rol === "viewer" || session?.user?.app_metadata?.rol === "viewer"
   const [authReady, setAuthReady] = useState(false)
 
   const [leads, setLeads] = useState([])
