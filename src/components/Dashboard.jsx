@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { money, fmtFecha, todayISO } from '../lib/helpers'
 
-export default function Dashboard({ leads, vendedores, onNewLead }) {
+export default function Dashboard({ leads, vendedores, onNewLead, isViewer }) {
   const { t } = useTranslation()
   const vName = id => vendedores.find(v => v.id === id)?.nombre || '—'
   const total = leads.length
@@ -28,7 +28,7 @@ export default function Dashboard({ leads, vendedores, onNewLead }) {
     <section className="view">
       <div className="page-head">
         <div><h1>{t('dashboard.titulo')}</h1><p>{t('dashboard.subtitulo')}</p></div>
-        <button className="btn btn-primary" onClick={onNewLead}>{t('dashboard.nuevoLead')}</button>
+        <button className="btn btn-primary" onClick={onNewLead}>{t('dashboard.nuevoLead')} isViewer check</button>
       </div>
       <div className="kpis">
         {kpis.map(k => (

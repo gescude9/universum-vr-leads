@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { money, fmtFecha } from '../lib/helpers'
 
-export default function Vendedores({ vendedores, leads, onNew, onEdit, onDelete }) {
+export default function Vendedores({ vendedores, leads, onNew, onEdit, onDelete, isViewer }) {
   const { t } = useTranslation()
   const [selected, setSelected] = useState(null)
 
@@ -12,7 +12,7 @@ export default function Vendedores({ vendedores, leads, onNew, onEdit, onDelete 
     <section className="view">
       <div className="page-head">
         <div><h1>{t('vendedores.titulo')}</h1><p>{t('vendedores.subtitulo')}</p></div>
-        <button className="btn btn-primary" onClick={onNew}>{t('vendedores.nuevoVendedor')}</button>
+        {!isViewer && <button className="btn btn-primary" onClick={onNew}>{t('vendedores.nuevoVendedor')}</button>}
       </div>
       <div className="table-wrap">
         <table>

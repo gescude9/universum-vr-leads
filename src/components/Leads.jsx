@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { money, fmtFecha } from '../lib/helpers'
 import { ESTADOS } from '../constants'
 
-export default function Leads({ leads, vendedores, onNew, onEdit, onDelete }) {
+export default function Leads({ leads, vendedores, onNew, onEdit, onDelete, isViewer }) {
   const { t } = useTranslation()
   const [q, setQ] = useState('')
   const [fe, setFe] = useState('')
@@ -20,7 +20,7 @@ export default function Leads({ leads, vendedores, onNew, onEdit, onDelete }) {
     <section className="view">
       <div className="page-head">
         <div><h1>{t('leads.titulo')}</h1><p>{t('leads.subtitulo')}</p></div>
-        <button className="btn btn-primary" onClick={onNew}>{t('leads.nuevoLead')}</button>
+        {!isViewer && <button className="btn btn-primary" onClick={onNew}>{t('leads.nuevoLead')}</button>}
       </div>
       <div className="toolbar">
         <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t('leads.buscar')} />
@@ -62,8 +62,8 @@ export default function Leads({ leads, vendedores, onNew, onEdit, onDelete }) {
                 <td data-label={t('leads.columnas.cerrado')}>{l.estado === 'Cerrado' ? money(l.monto_cerrado) : '—'}</td>
                 <td data-label={t('leads.columnas.comision')} style={{ color: 'var(--good)', fontWeight: 600 }}>{l.estado === 'Cerrado' ? money(l.comision) : '—'}</td>
                 <td>
-                  <button className="btn btn-ghost btn-sm" onClick={() => onEdit(l)}>{t('leads.editar')}</button>{' '}
-                  <button className="btn btn-danger btn-sm" onClick={() => onDelete(l)}>{t('leads.eliminar')}</button>
+                  {!isViewer && <button className="btn btn-ghost btn-sm" onClick={() => onEdit(l)}>{t('leads.editar')}</button>}{' '}
+                  {!isViewer && <button className="btn btn-danger btn-sm" onClick={() => onDelete(l)}>{t('leads.eliminar')}</button>}
                 </td>
               </tr>
             ))}

@@ -27,6 +27,7 @@ import Toast from './components/Toast'
 
 export default function App() {
   const { t } = useTranslation()
+  const isViewer = session?.user?.user_metadata?.rol === "viewer"
   const gcal = useGoogleCalendar()
   const [session, setSession] = useState(null)
   const [authReady, setAuthReady] = useState(false)
@@ -301,6 +302,7 @@ export default function App() {
           view={view}
           setView={setView}
           email={session.user?.email}
+          isViewer={isViewer}
           onLogout={logout}
           gcal={gcal}
           onImportar={() => setImportModal(true)}
@@ -309,13 +311,14 @@ export default function App() {
         />
         <main className="main">
           {view === 'dashboard' && (
-            <Dashboard leads={leads} vendedores={vendedores} onNewLead={() => openNewLead()} />
+            <Dashboard leads={leads} vendedores={vendedores} onNewLead={() => openNewLead()} isViewer={isViewer} />
           )}
           {view === 'leads' && (
             <Leads
               leads={leads}
               vendedores={vendedores}
               onNew={() => openNewLead()}
+              isViewer={isViewer}
               onEdit={openEditLead}
               onDelete={onDeleteLead}
             />
@@ -333,6 +336,7 @@ export default function App() {
               vendedores={vendedores}
               leads={leads}
               onNew={() => setVendModal({ vendedor: null })}
+              isViewer={isViewer}
               onEdit={(v) => setVendModal({ vendedor: v })}
               onDelete={onDeleteVend}
             />
