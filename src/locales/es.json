@@ -5,7 +5,8 @@
     "vendedores": "Vendedores",
     "calendario": "Calendario",
     "cerrarSesion": "Cerrar sesión",
-    "sesion": "Sesión"
+    "sesion": "Sesión",
+    "reportes": "Reportes"
   },
   "auth": {
     "titulo": "Iniciar sesión",
@@ -185,5 +186,17 @@
     "leadEliminado": "Lead eliminado",
     "vendedorEliminado": "Vendedor eliminado",
     "errorEliminar": "Error: {{msg}}"
+  },
+  "reportes": {
+    "titulo": "Reportes",
+    "subtitulo": "Ventas cerradas por mes y por vendedor.",
+    "porMes": "Por mes",
+    "porVendedor": "Por vendedor",
+    "eventos": "eventos",
+    "evento": "evento",
+    "verDetalle": "Ver detalle ▼",
+    "ocultarDetalle": "Ocultar detalle ▲",
+    "totalEventos": "Total",
+    "noVentas": "No hay ventas cerradas en"
   }
 }

@@ -194,8 +194,8 @@
     "porVendedor": "By salesperson",
     "eventos": "events",
     "evento": "event",
-    "verDetalle": "View detail",
-    "ocultarDetalle": "Hide detail",
+    "verDetalle": "View detail ▼",
+    "ocultarDetalle": "Hide detail ▲",
     "totalEventos": "Total",
     "noVentas": "No closed sales in"
   }
