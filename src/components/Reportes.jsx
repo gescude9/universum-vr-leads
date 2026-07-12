@@ -23,6 +23,26 @@ export default function Reportes({ leads, vendedores }) {
   const vName = id => vendedores.find(v => v.id === id)?.nombre || '-'
 
   function getMes(fecha) { return parseInt(fecha.slice(5, 7)) - 1 }
+
+  function seleccionarMes(mes) {
+    setMesSeleccionado(mesSeleccionado === mes ? null : mes)
+    if (mesSeleccionado !== mes) {
+      setTimeout(() => {
+        const el = document.getElementById('detalle-mes')
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 50)
+    }
+  }
+
+  function seleccionarVendedor(id) {
+    setVendedorSeleccionado(vendedorSeleccionado === id ? null : id)
+    if (vendedorSeleccionado !== id) {
+      setTimeout(() => {
+        const el = document.getElementById('detalle-vendedor')
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 50)
+    }
+  }
   function getAno(fecha) { return parseInt(fecha.slice(0, 4)) }
 
   const anos = [...new Set(cerrados.map(l => getAno(l.fecha)))].sort((a,b) => b - a)
@@ -86,7 +106,7 @@ export default function Reportes({ leads, vendedores }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 12, marginBottom: 24 }}>
             {resumenMeses.map(m => (
               <div key={m.mes}
-                onClick={() => setMesSeleccionado(mesSeleccionado === m.mes ? null : m.mes)}
+                onClick={() => seleccionarMes(m.mes)}
                 style={{
                   background: mesSeleccionado === m.mes ? 'rgba(168,85,247,.15)' : 'var(--panel)',
                   border: `1px solid ${mesSeleccionado === m.mes ? 'var(--purple)' : 'var(--border)'}`,
@@ -110,6 +130,7 @@ export default function Reportes({ leads, vendedores }) {
             ))}
           </div>
 
+          <div id='detalle-mes'></div>
           {mesSeleccionado !== null && resumenMeses[mesSeleccionado].cantidad > 0 && (
             <div>
               <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 20, marginBottom: 14, color: 'var(--purple)' }}>
@@ -160,7 +181,7 @@ export default function Reportes({ leads, vendedores }) {
                 ) : resumenVendedores.map(v => (
                   <>
                     <tr key={v.id}
-                      onClick={() => setVendedorSeleccionado(vendedorSeleccionado === v.id ? null : v.id)}
+                      onClick={() => seleccionarVendedor(v.id)}
                       style={{ cursor: 'pointer', background: vendedorSeleccionado === v.id ? 'rgba(168,85,247,.08)' : '' }}>
                       <td data-label="Vendedor">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -172,6 +193,7 @@ export default function Reportes({ leads, vendedores }) {
                       <td data-label="Total" style={{ color: 'var(--blue)', fontWeight: 600 }}>{money(v.totalAno)}</td>
                       <td data-label="Comision" style={{ color: 'var(--good)', fontWeight: 600 }}>{money(v.comisionAno)}</td>
                     </tr>
+                    <tr id='detalle-vendedor'></tr>
                     {vendedorSeleccionado === v.id && (
                       <tr key={v.id + '-detail'}>
                         <td colSpan={4} style={{ padding: 0, background: 'rgba(140,108,255,.04)' }}>
