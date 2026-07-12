@@ -73,10 +73,10 @@ export default function Reportes({ leads, vendedores }) {
             {anos.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           <button className={`btn ${vista === 'meses' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => { setVista('meses'); setMesSeleccionado(null) }}>
-            Por mes
+            {t('reportes.porMes')}
           </button>
           <button className={`btn ${vista === 'vendedores' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => { setVista('vendedores'); setVendedorSeleccionado(null) }}>
-            Por vendedor
+            {t('reportes.porVendedor')}
           </button>
         </div>
       </div>
