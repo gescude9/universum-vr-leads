@@ -11,7 +11,7 @@ export default function Sidebar({ view, setView, email, onLogout, gcal, onImport
     { id: 'leads',       label: t('nav.leads'),        ic: '★' },
     { id: 'vendedores',  label: t('nav.vendedores'),   ic: '⬡' },
     { id: 'calendario',  label: t('nav.calendario'),   ic: '▦' },
-    { id: 'reportes', label: 'Reportes', ic: '📊' },
+    { id: 'reportes', label: t('nav.reportes'), ic: '📊' },
   ]
 
   return (
