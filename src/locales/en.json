@@ -5,7 +5,8 @@
     "vendedores": "Sales Team",
     "calendario": "Calendar",
     "cerrarSesion": "Sign out",
-    "sesion": "Session"
+    "sesion": "Session",
+    "reportes": "Reports"
   },
   "auth": {
     "titulo": "Sign in",
@@ -185,5 +186,17 @@
     "leadEliminado": "Lead deleted",
     "vendedorEliminado": "Salesperson deleted",
     "errorEliminar": "Error: {{msg}}"
+  },
+  "reportes": {
+    "titulo": "Reports",
+    "subtitulo": "Closed sales by month and salesperson.",
+    "porMes": "By month",
+    "porVendedor": "By salesperson",
+    "eventos": "events",
+    "evento": "event",
+    "verDetalle": "View detail",
+    "ocultarDetalle": "Hide detail",
+    "totalEventos": "Total",
+    "noVentas": "No closed sales in"
   }
 }

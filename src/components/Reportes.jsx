@@ -6,7 +6,10 @@ const MESES = [
   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
 ]
 
+import { useTranslation } from 'react-i18next'
+
 export default function Reportes({ leads, vendedores }) {
+  const { t } = useTranslation()
   const [vista, setVista] = useState('meses')
   const [mesSeleccionado, setMesSeleccionado] = useState(null)
   const [vendedorSeleccionado, setVendedorSeleccionado] = useState(null)
@@ -58,7 +61,7 @@ export default function Reportes({ leads, vendedores }) {
   return (
     <section className="view">
       <div className="page-head">
-        <div><h1>Reportes</h1><p>Ventas cerradas por mes y por vendedor.</p></div>
+        <div><h1>{t('reportes.titulo')}</h1><p>{t('reportes.subtitulo')}</p></div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <select value={ano} onChange={e => { setAno(Number(e.target.value)); setMesSeleccionado(null); setVendedorSeleccionado(null) }}
             style={{ background: 'var(--panel-solid)', border: '1px solid var(--border)', color: 'var(--text)', font: 'inherit', fontSize: 14, padding: '9px 12px', borderRadius: 'var(--radius-sm)' }}>
