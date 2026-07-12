@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { money, fmtFecha } from '../lib/helpers'
+import { useTranslation } from 'react-i18next'
 
 const MESES = [
   'Enero','Febrero','Marzo','Abril','Mayo','Junio',
   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
 ]
 
-import { useTranslation } from 'react-i18next'
 
 export default function Reportes({ leads, vendedores }) {
   const { t } = useTranslation()
