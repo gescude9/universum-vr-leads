@@ -23,6 +23,7 @@ import LeadModal from './components/LeadModal'
 import Vendedores from './components/Vendedores'
 import VendedorModal from './components/VendedorModal'
 import Calendario from './components/Calendario'
+import Reportes from './components/Reportes'
 import Toast from './components/Toast'
 
 export default function App() {
@@ -342,6 +343,9 @@ export default function App() {
               onEdit={(v) => setVendModal({ vendedor: v })}
               onDelete={onDeleteVend}
             />
+          )}
+          {view === 'reportes' && (
+            <Reportes leads={leads} vendedores={vendedores} />
           )}
           {view === 'calendario' && (
             <Calendario leads={leads} onNew={openNewLead} onEdit={openEditLead} isViewer={isViewer} />
