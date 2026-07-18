@@ -179,6 +179,13 @@ export default function App() {
       payload.estado === 'Cerrado'
         ? +((Number(payload.monto_cerrado) || 0) * (vendedores.find(v => v.id === payload.vendedor)?.comision_pct / 100 || COMISION)).toFixed(2)
         : 0
+    // fecha_venta = hoy cuando se marca como Cerrado
+    if (payload.estado === 'Cerrado' && !payload.fecha_venta) {
+      payload.fecha_venta = new Date().toISOString().slice(0, 10)
+    }
+    if (payload.estado !== 'Cerrado') {
+      payload.fecha_venta = null
+    }
 
     try {
       setSaving(true)
