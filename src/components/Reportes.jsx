@@ -36,21 +36,33 @@ export default function Reportes({ leads, vendedores }) {
 
   const cerradosAno = cerrados.filter(l => getAno(l) === ano)
 
+  const hoyMes = new Date().getMonth()
+  const hoyAno = new Date().getFullYear()
+
   const resumenMeses = MESES.map((nombre, i) => {
-    const del = cerradosAno.filter(l => getMes(l) === i)
     const manual = ventasManuales.find(v => v.mes === i + 1 && v.ano === ano)
-    const totalSistema = del.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
     const totalManual = manual ? Number(manual.total) : 0
-    const tieneManual = !!manual && del.length === 0
+    const esMesActual = i === hoyMes && ano === hoyAno
+
+    if (manual) {
+      const del = esMesActual ? cerradosAno.filter(l => getMes(l) === i) : []
+      const totalSistema = del.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
+      return {
+        mes: i, nombre, cantidad: del.length,
+        totalSistema, totalManual,
+        total: totalManual + totalSistema,
+        comision: del.reduce((s, l) => s + (Number(l.comision) || 0), 0),
+        esManual: true, notas: manual.notas || '',
+        eventos: del.sort((a,b) => getFechaVenta(a).localeCompare(getFechaVenta(b)))
+      }
+    }
+    const del = cerradosAno.filter(l => getMes(l) === i)
+    const totalSistema = del.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
     return {
-      mes: i, nombre,
-      cantidad: del.length,
-      totalSistema,
-      totalManual,
-      total: tieneManual ? totalManual : totalSistema,
+      mes: i, nombre, cantidad: del.length,
+      totalSistema, totalManual: 0, total: totalSistema,
       comision: del.reduce((s, l) => s + (Number(l.comision) || 0), 0),
-      esManual: tieneManual,
-      notas: manual?.notas || '',
+      esManual: false, notas: '',
       eventos: del.sort((a,b) => getFechaVenta(a).localeCompare(getFechaVenta(b)))
     }
   }).filter(m => m.total > 0 || m.cantidad > 0)
