@@ -1,28 +1,80 @@
-import { useState } from 'react'
-import { money, fmtFecha } from '../lib/helpers'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { money, fmtFecha } from '../lib/helpers'
+import { supabase } from '../supabaseClient'
 
-const MESES_ES = [
-  'Enero','Febrero','Marzo','Abril','Mayo','Junio',
-  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
-]
-const MESES_EN = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December'
-]
-
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+const MESES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 export default function Reportes({ leads, vendedores }) {
   const { t, i18n } = useTranslation()
   const MESES = i18n.language?.startsWith('en') ? MESES_EN : MESES_ES
+
   const [vista, setVista] = useState('meses')
   const [mesSeleccionado, setMesSeleccionado] = useState(null)
   const [vendedorSeleccionado, setVendedorSeleccionado] = useState(null)
+  const [ventasManuales, setVentasManuales] = useState([])
+  const [ano, setAno] = useState(new Date().getFullYear())
 
-  const cerrados = leads.filter(l => l.estado === 'Cerrado' && l.fecha)
+  useEffect(() => {
+    supabase.from('ventas_manuales').select('*').then(({ data }) => {
+      if (data) setVentasManuales(data)
+    })
+  }, [])
+
+  const cerrados = leads.filter(l => l.estado === 'Cerrado')
   const vName = id => vendedores.find(v => v.id === id)?.nombre || '-'
 
-  function getMes(fecha) { return parseInt(fecha.slice(5, 7)) - 1 }
+  function getFechaVenta(lead) { return lead.fecha_venta || lead.fecha || '' }
+  function getMes(lead) { return parseInt(getFechaVenta(lead).slice(5, 7)) - 1 }
+  function getAno(lead) { return parseInt(getFechaVenta(lead).slice(0, 4)) }
+
+  const anos = [...new Set([
+    ...cerrados.map(l => getAno(l)).filter(Boolean),
+    ...ventasManuales.map(v => v.ano)
+  ])].sort((a,b) => b - a)
+
+  const cerradosAno = cerrados.filter(l => getAno(l) === ano)
+
+  const resumenMeses = MESES.map((nombre, i) => {
+    const del = cerradosAno.filter(l => getMes(l) === i)
+    const manual = ventasManuales.find(v => v.mes === i + 1 && v.ano === ano)
+    const totalSistema = del.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
+    const totalManual = manual ? Number(manual.total) : 0
+    const tieneManual = !!manual && del.length === 0
+    return {
+      mes: i, nombre,
+      cantidad: del.length,
+      totalSistema,
+      totalManual,
+      total: tieneManual ? totalManual : totalSistema,
+      comision: del.reduce((s, l) => s + (Number(l.comision) || 0), 0),
+      esManual: tieneManual,
+      notas: manual?.notas || '',
+      eventos: del.sort((a,b) => getFechaVenta(a).localeCompare(getFechaVenta(b)))
+    }
+  }).filter(m => m.total > 0 || m.cantidad > 0)
+
+  const resumenVendedores = vendedores.map(v => {
+    const sus = cerradosAno.filter(l => l.vendedor === v.id)
+    const porMes = MESES.map((nombre, i) => {
+      const del = sus.filter(l => getMes(l) === i)
+      return {
+        mes: i, nombre,
+        cantidad: del.length,
+        total: del.reduce((s,l) => s+(Number(l.monto_cerrado)||0),0),
+        comision: del.reduce((s,l) => s+(Number(l.comision)||0),0),
+        eventos: del.sort((a,b) => getFechaVenta(a).localeCompare(getFechaVenta(b)))
+      }
+    }).filter(m => m.cantidad > 0)
+    return {
+      ...v,
+      totalAno: sus.reduce((s,l) => s+(Number(l.monto_cerrado)||0),0),
+      comisionAno: sus.reduce((s,l) => s+(Number(l.comision)||0),0),
+      cantidadAno: sus.length,
+      porMes
+    }
+  }).filter(v => v.cantidadAno > 0).sort((a,b) => b.totalAno - a.totalAno)
 
   function seleccionarMes(mes) {
     setMesSeleccionado(mesSeleccionado === mes ? null : mes)
@@ -43,50 +95,16 @@ export default function Reportes({ leads, vendedores }) {
       }, 50)
     }
   }
-  function getAno(fecha) { return parseInt(fecha.slice(0, 4)) }
 
-  const anos = [...new Set(cerrados.map(l => getAno(l.fecha)))].sort((a,b) => b - a)
-  const [ano, setAno] = useState(new Date().getFullYear())
-
-  const cerradosAno = cerrados.filter(l => getAno(l.fecha) === ano)
-
-  const resumenMeses = MESES.map((nombre, i) => {
-    const del = cerradosAno.filter(l => getMes(l.fecha) === i)
-    return {
-      mes: i,
-      nombre,
-      cantidad: del.length,
-      total: del.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0),
-      comision: del.reduce((s, l) => s + (Number(l.comision) || 0), 0),
-      eventos: del.sort((a,b) => a.fecha.localeCompare(b.fecha))
-    }
-  })
-
-  const resumenVendedores = vendedores.map(v => {
-    const sus = cerradosAno.filter(l => l.vendedor === v.id)
-    const porMes = MESES.map((nombre, i) => {
-      const del = sus.filter(l => getMes(l.fecha) === i)
-      return {
-        mes: i, nombre,
-        cantidad: del.length,
-        total: del.reduce((s,l) => s + (Number(l.monto_cerrado)||0), 0),
-        comision: del.reduce((s,l) => s + (Number(l.comision)||0), 0),
-        eventos: del.sort((a,b) => a.fecha.localeCompare(b.fecha))
-      }
-    }).filter(m => m.cantidad > 0)
-    return {
-      ...v,
-      totalAno: sus.reduce((s,l) => s + (Number(l.monto_cerrado)||0), 0),
-      comisionAno: sus.reduce((s,l) => s + (Number(l.comision)||0), 0),
-      cantidadAno: sus.length,
-      porMes
-    }
-  }).filter(v => v.cantidadAno > 0).sort((a,b) => b.totalAno - a.totalAno)
+  const totalAno = resumenMeses.reduce((s,m) => s + m.total, 0)
 
   return (
     <section className="view">
       <div className="page-head">
-        <div><h1>{t('reportes.titulo')}</h1><p>{t('reportes.subtitulo')}</p></div>
+        <div>
+          <h1>{t('reportes.titulo')}</h1>
+          <p>{t('reportes.subtitulo')}</p>
+        </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <select value={ano} onChange={e => { setAno(Number(e.target.value)); setMesSeleccionado(null); setVendedorSeleccionado(null) }}
             style={{ background: 'var(--panel-solid)', border: '1px solid var(--border)', color: 'var(--text)', font: 'inherit', fontSize: 14, padding: '9px 12px', borderRadius: 'var(--radius-sm)' }}>
@@ -101,53 +119,60 @@ export default function Reportes({ leads, vendedores }) {
         </div>
       </div>
 
+      <div className="card" style={{ marginBottom: 20, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ color: 'var(--muted)', fontSize: 13 }}>Total vendido {ano}</div>
+        <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 28, fontWeight: 700, color: 'var(--good)' }}>{money(totalAno)}</div>
+      </div>
+
       {vista === 'meses' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 12, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px,1fr))', gap: 12, marginBottom: 24 }}>
             {resumenMeses.map(m => (
               <div key={m.mes}
-                onClick={() => seleccionarMes(m.mes)}
+                onClick={() => !m.esManual && seleccionarMes(m.mes)}
                 style={{
                   background: mesSeleccionado === m.mes ? 'rgba(168,85,247,.15)' : 'var(--panel)',
                   border: `1px solid ${mesSeleccionado === m.mes ? 'var(--purple)' : 'var(--border)'}`,
-                  borderRadius: 'var(--radius)', padding: 16, cursor: 'pointer', transition: '.15s'
+                  borderRadius: 'var(--radius)', padding: 16,
+                  cursor: m.esManual ? 'default' : 'pointer', transition: '.15s'
                 }}>
-                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 16, marginBottom: 8 }}>
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>
                   {m.nombre}
+                  {m.esManual && <span style={{ fontSize: 10, color: 'var(--muted)', marginLeft: 6, background: 'rgba(140,108,255,.15)', padding: '2px 6px', borderRadius: 4 }}>historico</span>}
                 </div>
                 <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--good)' }}>
                   {money(m.total)}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
-                  {m.cantidad} {m.cantidad === 1 ? 'evento' : 'eventos'} · Comision: {money(m.comision)}
+                  {m.esManual ? m.notas : `${m.cantidad} ${m.cantidad === 1 ? 'evento' : 'eventos'} - ${money(m.comision)}`}
                 </div>
-                {m.cantidad > 0 && (
+                {!m.esManual && m.cantidad > 0 && (
                   <div style={{ fontSize: 11, color: 'var(--purple)', marginTop: 6 }}>
-                    {mesSeleccionado === m.mes ? 'Ocultar detalle ▲' : 'Ver detalle ▼'}
+                    {mesSeleccionado === m.mes ? t('reportes.ocultarDetalle') : t('reportes.verDetalle')}
                   </div>
                 )}
               </div>
             ))}
           </div>
 
-          <div id='detalle-mes'></div>
-          {mesSeleccionado !== null && resumenMeses[mesSeleccionado].cantidad > 0 && (
+          <div id="detalle-mes"></div>
+          {mesSeleccionado !== null && resumenMeses.find(m => m.mes === mesSeleccionado)?.cantidad > 0 && (
             <div>
               <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 20, marginBottom: 14, color: 'var(--purple)' }}>
-                {resumenMeses[mesSeleccionado].nombre} {ano} — {resumenMeses[mesSeleccionado].cantidad} eventos
+                {resumenMeses.find(m => m.mes === mesSeleccionado)?.nombre} {ano}
               </h2>
               <div className="table-wrap">
                 <table>
                   <thead><tr>
-                    <th>Cliente</th><th>Fecha</th><th>Hora</th><th>Paquete</th>
+                    <th>Cliente</th><th>Fecha venta</th><th>Fecha evento</th><th>Paquete</th>
                     <th>Personas</th><th>Vendedor</th><th>Monto</th><th>Comision</th>
                   </tr></thead>
                   <tbody>
-                    {resumenMeses[mesSeleccionado].eventos.map(l => (
+                    {resumenMeses.find(m => m.mes === mesSeleccionado)?.eventos.map(l => (
                       <tr key={l.id}>
                         <td data-label="Cliente" className="strong">{l.nombre}</td>
-                        <td data-label="Fecha">{fmtFecha(l.fecha)}</td>
-                        <td data-label="Hora">{l.hora || '-'}</td>
+                        <td data-label="Fecha venta" style={{ color: 'var(--blue)' }}>{fmtFecha(l.fecha_venta || l.fecha)}</td>
+                        <td data-label="Fecha evento" style={{ color: 'var(--muted)' }}>{fmtFecha(l.fecha)}</td>
                         <td data-label="Paquete"><span className="pkg-tag">{l.paquete}</span></td>
                         <td data-label="Personas">{l.personas}p</td>
                         <td data-label="Vendedor">{vName(l.vendedor)}</td>
@@ -156,9 +181,15 @@ export default function Reportes({ leads, vendedores }) {
                       </tr>
                     ))}
                     <tr style={{ borderTop: '2px solid var(--border)' }}>
-                      <td colSpan={6} style={{ color: 'var(--muted)', fontSize: 12, padding: '12px 16px' }}>Total {resumenMeses[mesSeleccionado].cantidad} eventos</td>
-                      <td style={{ color: 'var(--blue)', fontWeight: 700, padding: '12px 16px' }}>{money(resumenMeses[mesSeleccionado].total)}</td>
-                      <td style={{ color: 'var(--good)', fontWeight: 700, padding: '12px 16px' }}>{money(resumenMeses[mesSeleccionado].comision)}</td>
+                      <td colSpan={6} style={{ color: 'var(--muted)', fontSize: 12, padding: '12px 16px' }}>
+                        Total {resumenMeses.find(m => m.mes === mesSeleccionado)?.cantidad} eventos
+                      </td>
+                      <td style={{ color: 'var(--blue)', fontWeight: 700, padding: '12px 16px' }}>
+                        {money(resumenMeses.find(m => m.mes === mesSeleccionado)?.totalSistema)}
+                      </td>
+                      <td style={{ color: 'var(--good)', fontWeight: 700, padding: '12px 16px' }}>
+                        {money(resumenMeses.find(m => m.mes === mesSeleccionado)?.comision)}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -185,7 +216,7 @@ export default function Reportes({ leads, vendedores }) {
                       style={{ cursor: 'pointer', background: vendedorSeleccionado === v.id ? 'rgba(168,85,247,.08)' : '' }}>
                       <td data-label="Vendedor">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ color: 'var(--muted)', fontSize: 12 }}>{vendedorSeleccionado === v.id ? '▼' : '▶'}</span>
+                          <span style={{ color: 'var(--muted)', fontSize: 12 }}>{vendedorSeleccionado === v.id ? 'v' : '>'}</span>
                           <strong>{v.nombre}</strong>
                         </div>
                       </td>
@@ -193,9 +224,8 @@ export default function Reportes({ leads, vendedores }) {
                       <td data-label="Total" style={{ color: 'var(--blue)', fontWeight: 600 }}>{money(v.totalAno)}</td>
                       <td data-label="Comision" style={{ color: 'var(--good)', fontWeight: 600 }}>{money(v.comisionAno)}</td>
                     </tr>
-                    <tr id='detalle-vendedor'></tr>
                     {vendedorSeleccionado === v.id && (
-                      <tr key={v.id + '-detail'}>
+                      <tr key={v.id + '-detail'} id="detalle-vendedor">
                         <td colSpan={4} style={{ padding: 0, background: 'rgba(140,108,255,.04)' }}>
                           {v.porMes.map(m => (
                             <div key={m.mes} style={{ borderBottom: '1px solid var(--border)', padding: '12px 24px' }}>
@@ -211,7 +241,7 @@ export default function Reportes({ leads, vendedores }) {
                                   {m.eventos.map(l => (
                                     <tr key={l.id} style={{ borderBottom: '1px solid rgba(140,108,255,.06)' }}>
                                       <td style={{ padding: '6px 0', fontWeight: 600 }}>{l.nombre}</td>
-                                      <td style={{ padding: '6px 8px', color: 'var(--muted)' }}>{fmtFecha(l.fecha)}</td>
+                                      <td style={{ padding: '6px 8px', color: 'var(--blue)' }}>{fmtFecha(l.fecha_venta || l.fecha)}</td>
                                       <td style={{ padding: '6px 8px' }}><span className="pkg-tag">{l.paquete}</span></td>
                                       <td style={{ padding: '6px 8px', color: 'var(--muted)' }}>{l.personas}p</td>
                                       <td style={{ padding: '6px 8px', color: 'var(--blue)', fontWeight: 600 }}>{money(l.monto_cerrado)}</td>
