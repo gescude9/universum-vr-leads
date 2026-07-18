@@ -34,7 +34,7 @@ export default function Reportes({ leads, vendedores }) {
     ...ventasManuales.map(v => v.ano)
   ])].sort((a,b) => b - a)
 
-  const cerradosAno = cerrados.filter(l => getAno(l) === ano)
+  const cerradosAno = cerrados.filter(l => l.fecha_venta && getAno(l) === ano)
 
   const hoyMes = new Date().getMonth()
   const hoyAno = new Date().getFullYear()
