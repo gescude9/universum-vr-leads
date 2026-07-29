@@ -16,8 +16,10 @@ export default function Dashboard({ leads, vendedores, onNewLead, isViewer, setV
   const total = leads.length
   const by = est => leads.filter(l => l.estado === est).length
   const cerrados = leads.filter(l => l.estado === 'Cerrado')
+  const totalCerradosManual = ventasManuales.reduce((s, v) => s + (Number(v.cantidad) || 0), 0)
+  const totalCerrados = totalCerradosManual > 0 ? totalCerradosManual : cerrados.length
   const ventasSistema = cerrados.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
-  const ventas = ventasSistema + totalManual
+  const ventas = totalManual > 0 ? totalManual : ventasSistema
   const comisiones = cerrados.reduce((s, l) => s + (Number(l.comision) || 0), 0)
   const pct = n => total ? Math.round(n / total * 100) + t('dashboard.delTotal') : '-'
 
@@ -30,7 +32,7 @@ export default function Dashboard({ leads, vendedores, onNewLead, isViewer, setV
     { lbl: t('dashboard.totalLeads'), val: total, color: 'var(--purple)', estado: '' },
     { lbl: t('dashboard.nuevos'), val: by('Nuevo'), color: 'var(--blue)', estado: 'Nuevo' },
     { lbl: t('dashboard.enSeguimiento'), val: by('Seguimiento'), color: 'var(--warn)', estado: 'Seguimiento' },
-    { lbl: t('dashboard.cerrados'), val: cerrados.length, color: 'var(--good)', estado: 'Cerrado' },
+    { lbl: t('dashboard.cerrados'), val: totalCerrados, color: 'var(--good)', estado: 'Cerrado' },
   ]
 
   const hoy = todayISO()
@@ -67,7 +69,7 @@ export default function Dashboard({ leads, vendedores, onNewLead, isViewer, setV
         <div className="card kpi">
           <div className="lbl">{t('dashboard.ventasTotales')}</div>
           <div className="val grad">{money(ventas)}</div>
-          <span className="tag">{cerrados.length} {t('dashboard.cumplesCerrados')} · {by('Perdido')} {t('dashboard.perdidos')}</span>
+          <span className="tag">{totalCerrados} {t('dashboard.cumplesCerrados')} · {by('Perdido')} {t('dashboard.perdidos')}</span>
         </div>
         <div className="card kpi">
           <div className="lbl">{t('dashboard.comisionesTotales')}</div>
