@@ -18,8 +18,9 @@ export default function Dashboard({ leads, vendedores, onNewLead, isViewer, setV
   const cerrados = leads.filter(l => l.estado === 'Cerrado')
   const totalCerradosManual = ventasManuales.reduce((s, v) => s + (Number(v.cantidad) || 0), 0)
   const totalCerrados = totalCerradosManual > 0 ? totalCerradosManual : cerrados.length
-  const ventasSistema = cerrados.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
-  const ventas = totalManual > 0 ? totalManual : ventasSistema
+  // Total = historicos manuales + ventas del sistema con fecha_venta
+  const ventasSistema = cerrados.filter(l => l.fecha_venta).reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
+  const ventas = totalManual + ventasSistema
   const comisiones = cerrados.reduce((s, l) => s + (Number(l.comision) || 0), 0)
   const pct = n => total ? Math.round(n / total * 100) + t('dashboard.delTotal') : '-'
 
