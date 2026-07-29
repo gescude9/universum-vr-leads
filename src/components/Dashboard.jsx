@@ -1,13 +1,23 @@
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { money, fmtFecha, todayISO } from '../lib/helpers'
+import { supabase } from '../supabaseClient'
 
 export default function Dashboard({ leads, vendedores, onNewLead, isViewer, setView, setFiltroEstado }) {
   const { t } = useTranslation()
+  const [ventasManuales, setVentasManuales] = useState([])
+  useEffect(() => {
+    supabase.from('ventas_manuales').select('*').then(({ data }) => {
+      if (data) setVentasManuales(data)
+    })
+  }, [])
+  const totalManual = ventasManuales.reduce((s, v) => s + (Number(v.total) || 0), 0)
   const vName = id => vendedores.find(v => v.id === id)?.nombre || '-'
   const total = leads.length
   const by = est => leads.filter(l => l.estado === est).length
   const cerrados = leads.filter(l => l.estado === 'Cerrado')
-  const ventas = cerrados.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
+  const ventasSistema = cerrados.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
+  const ventas = ventasSistema + totalManual
   const comisiones = cerrados.reduce((s, l) => s + (Number(l.comision) || 0), 0)
   const pct = n => total ? Math.round(n / total * 100) + t('dashboard.delTotal') : '-'
 
