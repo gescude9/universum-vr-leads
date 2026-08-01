@@ -179,9 +179,14 @@ export default function App() {
       payload.estado === 'Cerrado'
         ? +((Number(payload.monto_cerrado) || 0) * (vendedores.find(v => v.id === payload.vendedor)?.comision_pct / 100 || COMISION)).toFixed(2)
         : 0
-    // fecha_venta = hoy cuando se marca como Cerrado
+    // fecha_venta = hoy en zona horaria de Panama (UTC-5)
     if (payload.estado === 'Cerrado' && !payload.fecha_venta) {
-      payload.fecha_venta = new Date().toISOString().slice(0, 10)
+      const ahora = new Date()
+      const panama = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Panama' }))
+      const y = panama.getFullYear()
+      const m = String(panama.getMonth() + 1).padStart(2, '0')
+      const d = String(panama.getDate()).padStart(2, '0')
+      payload.fecha_venta = `${y}-${m}-${d}`
     }
     if (payload.estado !== 'Cerrado') {
       payload.fecha_venta = null
