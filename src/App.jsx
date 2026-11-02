@@ -26,6 +26,7 @@ import VendedorModal from './components/VendedorModal'
 import Calendario from './components/Calendario'
 import Reportes from './components/Reportes'
 import Extras, { ExtraModal } from './components/Extras'
+import CierreEventos from './components/CierreEventos'
 import Toast from './components/Toast'
 
 export default function App() {
@@ -392,6 +393,9 @@ export default function App() {
               onDelete={onDeleteExtra}
               isViewer={isViewer}
             />
+          )}
+          {view === 'cierre-eventos' && (
+            <CierreEventos leads={leads} vendedores={vendedores} />
           )}
         </main>
       </div>
