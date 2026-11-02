@@ -286,6 +286,74 @@ export default function Reportes({ leads, vendedores, extras }) {
                     </div>
                   </div>
                 )}
+
+                {/* Desglose por vendedor — solo octubre en adelante (mes >= 9) */}
+                {m.mes >= 9 && !m.esManual && m.cantidad > 0 && (() => {
+                  const porVend = vendedores.map(v => {
+                    const suyos = m.eventos.filter(l => l.vendedor === v.id)
+                    const susExtras = m.extras.filter(e => e.vendedor === v.id)
+                    if (suyos.length === 0 && susExtras.length === 0) return null
+                    return {
+                      ...v,
+                      eventos: suyos,
+                      extras: susExtras,
+                      cantidad: suyos.length,
+                      total: suyos.reduce((s,l) => s+(Number(l.monto_cerrado)||0),0) + susExtras.reduce((s,e) => s+(Number(e.monto)||0),0),
+                      comision: suyos.reduce((s,l) => s+(Number(l.comision)||0),0),
+                    }
+                  }).filter(Boolean).sort((a,b) => b.cantidad - a.cantidad)
+
+                  if (porVend.length === 0) return null
+                  return (
+                    <div style={{ marginTop: 24 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                        Desglose por vendedor
+                      </div>
+                      <div className="table-wrap">
+                        <table>
+                          <thead><tr>
+                            <th>Vendedor</th><th style={{ textAlign: 'center' }}>Eventos</th><th>Total vendido</th><th>Comisión</th>
+                          </tr></thead>
+                          <tbody>
+                            {porVend.map(v => (
+                              <>
+                                <tr key={v.id}>
+                                  <td className="strong">{v.nombre}</td>
+                                  <td style={{ textAlign: 'center' }}>
+                                    <span style={{ background: 'rgba(140,108,255,.15)', color: 'var(--purple)', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 15, borderRadius: 6, padding: '2px 10px' }}>
+                                      {v.cantidad}
+                                    </span>
+                                  </td>
+                                  <td style={{ color: 'var(--blue)', fontWeight: 600 }}>{money(v.total)}</td>
+                                  <td style={{ color: 'var(--good)', fontWeight: 600 }}>{money(v.comision)}</td>
+                                </tr>
+                                {v.eventos.map(l => (
+                                  <tr key={l.id} style={{ background: 'rgba(140,108,255,.03)' }}>
+                                    <td style={{ paddingLeft: 28, color: 'var(--muted)', fontSize: 12 }}>↳ {l.nombre}</td>
+                                    <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>{fmtFecha(l.fecha_venta || l.fecha)}</td>
+                                    <td style={{ color: 'var(--blue)', fontSize: 12 }}>{money(l.monto_cerrado)}</td>
+                                    <td style={{ color: 'var(--good)', fontSize: 12 }}>{money(l.comision)}</td>
+                                  </tr>
+                                ))}
+                                {v.extras.map(e => (
+                                  <tr key={e.id} style={{ background: 'rgba(168,85,247,.04)' }}>
+                                    <td style={{ paddingLeft: 28, color: 'var(--muted)', fontSize: 12 }}>
+                                      <span style={{ background: 'rgba(168,85,247,.15)', color: 'var(--purple)', fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, marginRight: 5 }}>EXTRA</span>
+                                      {e.nombre}
+                                    </td>
+                                    <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>—</td>
+                                    <td style={{ color: 'var(--blue)', fontSize: 12 }}>{money(e.monto)}</td>
+                                    <td></td>
+                                  </tr>
+                                ))}
+                              </>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )
           })()}
