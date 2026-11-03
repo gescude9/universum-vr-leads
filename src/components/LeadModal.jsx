@@ -58,6 +58,7 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, o
       monto_estimado: Number(f.monto_estimado) || precioDe(f.paquete, f.personas),
       monto_cerrado: Number(f.monto_cerrado) || 0,
       notas: f.notas.trim(),
+               fecha_venta: lead?.fecha_venta || null,
     }
     const ok = await onSave(payload, lead?.id)
     if (ok) onClose()
