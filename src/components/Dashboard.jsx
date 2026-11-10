@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { money, fmtFecha, todayISO } from '../lib/helpers'
 import { supabase } from '../supabaseClient'
 
-export default function Dashboard({ leads, vendedores, onNewLead, isViewer, setView, setFiltroEstado }) {
+export default function Dashboard({ leads, vendedores, extras, onNewLead, isViewer, setView, setFiltroEstado }) {
   const { t } = useTranslation()
   const [ventasManuales, setVentasManuales] = useState([])
   useEffect(() => {
@@ -18,9 +18,10 @@ export default function Dashboard({ leads, vendedores, onNewLead, isViewer, setV
   const cerrados = leads.filter(l => l.estado === 'Cerrado')
   const totalCerradosManual = ventasManuales.reduce((s, v) => s + (Number(v.cantidad) || 0), 0)
   const totalCerrados = totalCerradosManual > 0 ? totalCerradosManual : cerrados.length
-  // Total = historicos manuales + ventas del sistema con fecha_venta
+  // Total = historicos manuales + ventas del sistema con fecha_venta + extras
   const ventasSistema = cerrados.filter(l => l.fecha_venta).reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
-  const ventas = totalManual + ventasSistema
+  const totalExtras = (extras || []).reduce((s, e) => s + (Number(e.monto) || 0), 0)
+  const ventas = totalManual + ventasSistema + totalExtras
   const comisiones = cerrados.reduce((s, l) => s + (Number(l.comision) || 0), 0)
   const pct = n => total ? Math.round(n / total * 100) + t('dashboard.delTotal') : '-'
 

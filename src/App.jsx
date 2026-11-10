@@ -347,7 +347,7 @@ export default function App() {
         />
         <main className="main">
           {view === 'dashboard' && (
-            <Dashboard leads={leads} vendedores={vendedores} onNewLead={() => openNewLead()} isViewer={isViewer} setView={setView} setFiltroEstado={setFiltroEstadoLeads} />
+            <Dashboard leads={leads} vendedores={vendedores} extras={extras} onNewLead={() => openNewLead()} isViewer={isViewer} setView={setView} setFiltroEstado={setFiltroEstadoLeads} />
           )}
           {view === 'leads' && (
             <Leads
