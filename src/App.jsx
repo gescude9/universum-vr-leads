@@ -7,6 +7,7 @@ import {
 } from './lib/data'
 import { getLeadsSheet, updateLeadSheet, deleteLeadSheet } from './lib/dataSheet'
 import { getExtras, createExtra, updateExtra, deleteExtra } from './lib/dataExtras'
+import { getPrereservas, createPrereserva, updatePrereserva, deletePrereserva } from './lib/dataPrereservas'
 import LeadsSheet from './components/LeadsSheet'
 import { COMISION } from './constants'
 import { ultimaHoraInicio, hayConflicto } from './lib/helpers'
@@ -26,6 +27,7 @@ import VendedorModal from './components/VendedorModal'
 import Calendario from './components/Calendario'
 import Reportes from './components/Reportes'
 import Extras, { ExtraModal } from './components/Extras'
+import Prereservas, { PrereservaModal } from './components/Prereservas'
 import Toast from './components/Toast'
 
 export default function App() {
@@ -40,13 +42,15 @@ export default function App() {
   const [leadsSheet, setLeadsSheet] = useState([])
   const [vendedores, setVendedores] = useState([])
   const [extras, setExtras] = useState([])
+  const [prereservas, setPrereservas] = useState([])
   const [dataReady, setDataReady] = useState(false)
 
   const [view, setView] = useState('dashboard')
   const [leadModal, setLeadModal] = useState(null)
   const [importModal, setImportModal] = useState(false)
   const [sheetsModal, setSheetsModal] = useState(false)
-  const [extraModal, setExtraModal] = useState(null) // { extra: obj|null }
+  const [extraModal, setExtraModal] = useState(null)
+  const [prModal, setPrModal] = useState(null)
   const [syncing, setSyncing] = useState(false)
   const [filtroEstadoLeads, setFiltroEstadoLeads] = useState("")
   const [vendModal, setVendModal] = useState(null)
@@ -81,11 +85,12 @@ export default function App() {
     let activo = true
     ;(async () => {
       try {
-        const [v, l, ex] = await Promise.all([getVendedores(), getLeads(), getExtras()])
+        const [v, l, ex, pr] = await Promise.all([getVendedores(), getLeads(), getExtras(), getPrereservas()])
         if (!activo) return
         setVendedores(v)
         setLeads(l)
         setExtras(ex)
+        setPrereservas(pr)
       } catch (e) {
         notify(t('common.errorDatos', { msg: e.message }), 'bad')
       } finally {
@@ -109,6 +114,8 @@ export default function App() {
         () => { getVendedores().then(v => setVendedores(v)) })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'extras' },
         () => { getExtras().then(ex => setExtras(ex)) })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prereservas' },
+        () => { getPrereservas().then(pr => setPrereservas(pr)) })
       .subscribe()
 
     return () => {
@@ -121,6 +128,7 @@ export default function App() {
   const reloadLeadsSheet = async () => setLeadsSheet(await getLeadsSheet())
   const reloadVend = async () => setVendedores(await getVendedores())
   const reloadExtras = async () => setExtras(await getExtras())
+  const reloadPrereservas = async () => setPrereservas(await getPrereservas())
 
   // ---------- Importar desde Google Calendar ----------
   async function onImportarLead(payload) {
@@ -304,12 +312,41 @@ export default function App() {
     }
   }
 
+  // ---------- Handlers de pre-reservas ----------
+  async function onSavePr(payload, id) {
+    try {
+      setSaving(true)
+      if (id) await updatePrereserva(id, payload)
+      else await createPrereserva(payload)
+      await reloadPrereservas()
+      notify(id ? 'Pre-reserva actualizada' : 'Pre-reserva creada', 'ok')
+      return true
+    } catch (e) {
+      notify('Error: ' + e.message, 'bad')
+      return false
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function onDeletePr(pr) {
+    if (!confirm(`¿Eliminar la pre-reserva de "${pr.nombre}"?`)) return
+    try {
+      await deletePrereserva(pr.id)
+      await reloadPrereservas()
+      notify('Pre-reserva eliminada', 'ok')
+    } catch (e) {
+      notify('Error: ' + e.message, 'bad')
+    }
+  }
+
   async function logout() {
     await supabase.auth.signOut()
     setDataReady(false)
     setLeads([])
     setVendedores([])
     setExtras([])
+    setPrereservas([])
   }
 
   // ---------- Render ----------
@@ -378,7 +415,7 @@ export default function App() {
             />
           )}
           {view === 'reportes' && (
-            <Reportes leads={leads} vendedores={vendedores} extras={extras} />
+            <Reportes leads={leads} vendedores={vendedores} extras={extras} prereservas={prereservas} />
           )}
           {view === 'calendario' && (
             <Calendario leads={leads} onNew={openNewLead} onEdit={openEditLead} isViewer={isViewer} />
@@ -390,6 +427,16 @@ export default function App() {
               onNew={() => setExtraModal({ extra: null })}
               onEdit={(e) => setExtraModal({ extra: e })}
               onDelete={onDeleteExtra}
+              isViewer={isViewer}
+            />
+          )}
+          {view === 'prereservas' && (
+            <Prereservas
+              prereservas={prereservas}
+              vendedores={vendedores}
+              onNew={() => setPrModal({ pr: null })}
+              onEdit={(p) => setPrModal({ pr: p })}
+              onDelete={onDeletePr}
               isViewer={isViewer}
             />
           )}
@@ -425,6 +472,17 @@ export default function App() {
           onSave={onSaveExtra}
           onDelete={(e) => { setExtraModal(null); onDeleteExtra(e) }}
           onClose={() => setExtraModal(null)}
+          saving={saving}
+        />
+      )}
+      {prModal && (
+        <PrereservaModal
+          key={prModal.pr?.id || 'nueva-prereserva'}
+          pr={prModal.pr}
+          vendedores={vendedores}
+          onSave={onSavePr}
+          onDelete={(p) => { setPrModal(null); onDeletePr(p) }}
+          onClose={() => setPrModal(null)}
           saving={saving}
         />
       )}

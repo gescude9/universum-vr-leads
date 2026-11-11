@@ -6,7 +6,7 @@ import { supabase } from '../supabaseClient'
 const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const MESES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
-export default function Reportes({ leads, vendedores, extras }) {
+export default function Reportes({ leads, vendedores, extras, prereservas }) {
   const { t, i18n } = useTranslation()
   const MESES = i18n.language?.startsWith('en') ? MESES_EN : MESES_ES
 
@@ -30,15 +30,18 @@ export default function Reportes({ leads, vendedores, extras }) {
   function getAno(lead) { return parseInt(getFechaVenta(lead).slice(0, 4)) }
 
   const extrasArr = extras || []
+  const prereservasArr = prereservas || []
 
   const anos = [...new Set([
     ...cerrados.map(l => getAno(l)).filter(Boolean),
     ...ventasManuales.map(v => v.ano),
     ...extrasArr.map(e => e.ano),
+    ...prereservasArr.map(p => p.ano),
   ])].sort((a,b) => b - a)
 
   const cerradosAno = cerrados.filter(l => l.fecha_venta && getAno(l) === ano)
   const extrasAno = extrasArr.filter(e => e.ano === ano)
+  const prereservasAno = prereservasArr.filter(p => p.ano === ano)
 
   const hoyMes = new Date().getMonth()
   const hoyAno = new Date().getFullYear()
@@ -51,67 +54,80 @@ export default function Reportes({ leads, vendedores, extras }) {
     const extrasDelMes = extrasAno.filter(e => e.mes === i + 1)
     const totalExtras = extrasDelMes.reduce((s, e) => s + (Number(e.monto) || 0), 0)
 
+    const prereservasDelMes = prereservasAno.filter(p => p.mes === i + 1)
+    const totalPrereservas = prereservasDelMes.reduce((s, p) => s + (Number(p.monto) || 0), 0)
+
     if (manual) {
       const del = esMesActual ? cerradosAno.filter(l => getMes(l) === i) : []
       const totalSistema = del.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
       return {
         mes: i, nombre, cantidad: del.length,
-        totalSistema, totalManual, totalExtras,
-        total: totalManual + totalSistema + totalExtras,
+        totalSistema, totalManual, totalExtras, totalPrereservas,
+        total: totalManual + totalSistema + totalExtras + totalPrereservas,
         comision: del.reduce((s, l) => s + (Number(l.comision) || 0), 0),
         esManual: true, notas: manual.notas || '',
         eventos: del.sort((a,b) => getFechaVenta(a).localeCompare(getFechaVenta(b))),
         extras: extrasDelMes,
+        prereservas: prereservasDelMes,
       }
     }
     const del = cerradosAno.filter(l => getMes(l) === i)
     const totalSistema = del.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
     return {
       mes: i, nombre, cantidad: del.length,
-      totalSistema, totalManual: 0, totalExtras,
-      total: totalSistema + totalExtras,
+      totalSistema, totalManual: 0, totalExtras, totalPrereservas,
+      total: totalSistema + totalExtras + totalPrereservas,
       comision: del.reduce((s, l) => s + (Number(l.comision) || 0), 0),
       esManual: false, notas: '',
       eventos: del.sort((a,b) => getFechaVenta(a).localeCompare(getFechaVenta(b))),
       extras: extrasDelMes,
+      prereservas: prereservasDelMes,
     }
   }).filter(m => m.total > 0 || m.cantidad > 0)
 
-  // Resumen por vendedor: incluye extras
+  // Resumen por vendedor: incluye extras y prereservas
   const resumenVendedores = vendedores.map(v => {
     const sus = cerradosAno.filter(l => l.vendedor === v.id)
     const susExtras = extrasAno.filter(e => e.vendedor === v.id)
+    const susPrereservas = prereservasAno.filter(p => p.vendedor === v.id)
 
     const porMes = MESES.map((nombre, i) => {
       const del = sus.filter(l => getMes(l) === i)
       const delExtras = susExtras.filter(e => e.mes === i + 1)
+      const delPrereservas = susPrereservas.filter(p => p.mes === i + 1)
       const totalLeads = del.reduce((s,l) => s+(Number(l.monto_cerrado)||0),0)
       const totalExtrasM = delExtras.reduce((s,e) => s+(Number(e.monto)||0),0)
+      const totalPrereservasM = delPrereservas.reduce((s,p) => s+(Number(p.monto)||0),0)
       return {
         mes: i, nombre,
         cantidad: del.length,
-        total: totalLeads + totalExtrasM,
+        total: totalLeads + totalExtrasM + totalPrereservasM,
         totalLeads,
         totalExtras: totalExtrasM,
+        totalPrereservas: totalPrereservasM,
         comision: del.reduce((s,l) => s+(Number(l.comision)||0),0),
         eventos: del.sort((a,b) => getFechaVenta(a).localeCompare(getFechaVenta(b))),
         extras: delExtras,
+        prereservas: delPrereservas,
       }
-    }).filter(m => m.cantidad > 0 || m.extras.length > 0)
+    }).filter(m => m.cantidad > 0 || m.extras.length > 0 || m.prereservas.length > 0)
 
     const totalLeadsAno = sus.reduce((s,l) => s+(Number(l.monto_cerrado)||0),0)
     const totalExtrasAno = susExtras.reduce((s,e) => s+(Number(e.monto)||0),0)
+    const totalPrereservasAno = susPrereservas.reduce((s,p) => s+(Number(p.monto)||0),0)
     return {
       ...v,
-      totalAno: totalLeadsAno + totalExtrasAno,
+      totalAno: totalLeadsAno + totalExtrasAno + totalPrereservasAno,
       totalLeadsAno,
       totalExtrasAno,
+      totalPrereservasAno,
       comisionAno: sus.reduce((s,l) => s+(Number(l.comision)||0),0),
       cantidadAno: sus.length,
       cantidadExtrasAno: susExtras.length,
+      cantidadPrereservasAno: susPrereservas.length,
       porMes
     }
-  }).filter(v => v.cantidadAno > 0 || v.cantidadExtrasAno > 0).sort((a,b) => b.totalAno - a.totalAno)
+  }).filter(v => v.cantidadAno > 0 || v.cantidadExtrasAno > 0 || v.cantidadPrereservasAno > 0).sort((a,b) => b.totalAno - a.totalAno)
 
   function seleccionarMes(mes) {
     setMesSeleccionado(mesSeleccionado === mes ? null : mes)
@@ -166,7 +182,7 @@ export default function Reportes({ leads, vendedores, extras }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px,1fr))', gap: 12, marginBottom: 24 }}>
             {resumenMeses.map(m => (
               <div key={m.mes}
-                onClick={() => (!m.esManual || m.totalExtras > 0 || (m.esManual && m.cantidad > 0)) && seleccionarMes(m.mes)}
+                onClick={() => (!m.esManual || m.totalExtras > 0 || m.totalPrereservas > 0 || (m.esManual && m.cantidad > 0)) && seleccionarMes(m.mes)}
                 style={{
                   background: mesSeleccionado === m.mes ? 'rgba(168,85,247,.15)' : 'var(--panel)',
                   border: `1px solid ${mesSeleccionado === m.mes ? 'var(--purple)' : 'var(--border)'}`,
@@ -185,6 +201,11 @@ export default function Reportes({ leads, vendedores, extras }) {
                     + {money(m.totalExtras)} en extras
                   </div>
                 )}
+                {m.totalPrereservas > 0 && (
+                  <div style={{ fontSize: 11, color: 'var(--blue)', marginTop: 3 }}>
+                    + {money(m.totalPrereservas)} en pre-reservas
+                  </div>
+                )}
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
                   {m.esManual ? m.notas : `${m.cantidad} ${m.cantidad === 1 ? 'evento' : 'eventos'} · ${money(m.comision)}`}
                 </div>
@@ -199,7 +220,7 @@ export default function Reportes({ leads, vendedores, extras }) {
           {mesSeleccionado !== null && (() => {
             const m = resumenMeses.find(m => m.mes === mesSeleccionado)
             if (!m) return null
-            const tieneDetalle = m.cantidad > 0 || m.extras.length > 0
+            const tieneDetalle = m.cantidad > 0 || m.extras.length > 0 || m.prereservas.length > 0
             if (!tieneDetalle) return null
             return (
               <div>
@@ -251,7 +272,7 @@ export default function Reportes({ leads, vendedores, extras }) {
 
                 {/* Tabla extras */}
                 {m.extras.length > 0 && (
-                  <div>
+                  <div style={{ marginBottom: 20 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>
                       ⚡ Extras ({m.extras.length})
                     </div>
@@ -287,18 +308,62 @@ export default function Reportes({ leads, vendedores, extras }) {
                   </div>
                 )}
 
+                {/* Tabla pre-reservas */}
+                {m.prereservas.length > 0 && (
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                      📋 Pre-reservas ({m.prereservas.length})
+                    </div>
+                    <div className="table-wrap">
+                      <table>
+                        <thead><tr>
+                          <th>Cliente</th><th>Experiencia</th><th>Personas</th><th>Vendedor</th><th>Monto</th><th>Notas</th>
+                        </tr></thead>
+                        <tbody>
+                          {m.prereservas.map(p => (
+                            <tr key={p.id}>
+                              <td data-label="Cliente" className="strong">
+                                <span style={{ background: 'rgba(99,179,237,.12)', color: 'var(--blue)', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, marginRight: 6 }}>PRE</span>
+                                {p.nombre}
+                              </td>
+                              <td data-label="Experiencia"><span className="pkg-tag">{p.experiencia}</span></td>
+                              <td data-label="Personas">{p.personas}p</td>
+                              <td data-label="Vendedor">{vName(p.vendedor)}</td>
+                              <td data-label="Monto" style={{ color: 'var(--blue)', fontWeight: 600 }}>{money(p.monto)}</td>
+                              <td data-label="Notas" style={{ color: 'var(--muted)', fontSize: 12 }}>{p.notas || '-'}</td>
+                            </tr>
+                          ))}
+                          <tr style={{ borderTop: '2px solid var(--border)' }}>
+                            <td colSpan={4} style={{ color: 'var(--muted)', fontSize: 12, padding: '12px 16px' }}>
+                              Total {m.prereservas.length} pre-reservas
+                            </td>
+                            <td style={{ color: 'var(--blue)', fontWeight: 700, padding: '12px 16px' }}>
+                              {money(m.totalPrereservas)}
+                            </td>
+                            <td></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 {/* Desglose por vendedor — solo octubre en adelante (mes >= 9) */}
-                {m.mes >= 9 && !m.esManual && m.cantidad > 0 && (() => {
+                {m.mes >= 9 && !m.esManual && (m.cantidad > 0 || m.extras.length > 0 || m.prereservas.length > 0) && (() => {
                   const porVend = vendedores.map(v => {
                     const suyos = m.eventos.filter(l => l.vendedor === v.id)
                     const susExtras = m.extras.filter(e => e.vendedor === v.id)
-                    if (suyos.length === 0 && susExtras.length === 0) return null
+                    const susPrereservas = m.prereservas.filter(p => p.vendedor === v.id)
+                    if (suyos.length === 0 && susExtras.length === 0 && susPrereservas.length === 0) return null
                     return {
                       ...v,
                       eventos: suyos,
                       extras: susExtras,
+                      prereservas: susPrereservas,
                       cantidad: suyos.length,
-                      total: suyos.reduce((s,l) => s+(Number(l.monto_cerrado)||0),0) + susExtras.reduce((s,e) => s+(Number(e.monto)||0),0),
+                      total: suyos.reduce((s,l) => s+(Number(l.monto_cerrado)||0),0)
+                           + susExtras.reduce((s,e) => s+(Number(e.monto)||0),0)
+                           + susPrereservas.reduce((s,p) => s+(Number(p.monto)||0),0),
                       comision: suyos.reduce((s,l) => s+(Number(l.comision)||0),0),
                     }
                   }).filter(Boolean).sort((a,b) => b.cantidad - a.cantidad)
@@ -346,6 +411,17 @@ export default function Reportes({ leads, vendedores, extras }) {
                                     <td></td>
                                   </tr>
                                 ))}
+                                {v.prereservas.map(p => (
+                                  <tr key={p.id} style={{ background: 'rgba(99,179,237,.04)' }}>
+                                    <td style={{ paddingLeft: 28, color: 'var(--muted)', fontSize: 12 }}>
+                                      <span style={{ background: 'rgba(99,179,237,.15)', color: 'var(--blue)', fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, marginRight: 5 }}>PRE</span>
+                                      {p.nombre}
+                                    </td>
+                                    <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>{p.experiencia}</td>
+                                    <td style={{ color: 'var(--blue)', fontSize: 12 }}>{money(p.monto)}</td>
+                                    <td></td>
+                                  </tr>
+                                ))}
                               </>
                             ))}
                           </tbody>
@@ -365,11 +441,11 @@ export default function Reportes({ leads, vendedores, extras }) {
           <div className="table-wrap" style={{ marginBottom: 20 }}>
             <table>
               <thead><tr>
-                <th>Vendedor</th><th>Eventos</th><th>Extras</th><th>Total vendido</th><th>Comision</th>
+                <th>Vendedor</th><th>Eventos</th><th>Extras</th><th>Pre-reservas</th><th>Total vendido</th><th>Comision</th>
               </tr></thead>
               <tbody>
                 {resumenVendedores.length === 0 ? (
-                  <tr><td colSpan={5} className="empty">No hay ventas cerradas en {ano}.</td></tr>
+                  <tr><td colSpan={6} className="empty">No hay ventas cerradas en {ano}.</td></tr>
                 ) : resumenVendedores.map(v => (
                   <>
                     <tr key={v.id}
@@ -387,12 +463,17 @@ export default function Reportes({ leads, vendedores, extras }) {
                           ? <span style={{ color: 'var(--purple)', fontWeight: 600 }}>{v.cantidadExtrasAno} <span style={{ fontSize: 11, fontWeight: 400 }}>({money(v.totalExtrasAno)})</span></span>
                           : <span style={{ color: 'var(--muted)' }}>—</span>}
                       </td>
+                      <td data-label="Pre-reservas">
+                        {v.cantidadPrereservasAno > 0
+                          ? <span style={{ color: 'var(--blue)', fontWeight: 600 }}>{v.cantidadPrereservasAno} <span style={{ fontSize: 11, fontWeight: 400 }}>({money(v.totalPrereservasAno)})</span></span>
+                          : <span style={{ color: 'var(--muted)' }}>—</span>}
+                      </td>
                       <td data-label="Total" style={{ color: 'var(--blue)', fontWeight: 600 }}>{money(v.totalAno)}</td>
                       <td data-label="Comision" style={{ color: 'var(--good)', fontWeight: 600 }}>{money(v.comisionAno)}</td>
                     </tr>
                     {vendedorSeleccionado === v.id && (
                       <tr key={v.id + '-detail'} id="detalle-vendedor">
-                        <td colSpan={5} style={{ padding: 0, background: 'rgba(140,108,255,.04)' }}>
+                        <td colSpan={6} style={{ padding: 0, background: 'rgba(140,108,255,.04)' }}>
                           {v.porMes.map(m => (
                             <div key={m.mes} style={{ borderBottom: '1px solid var(--border)', padding: '12px 24px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -422,6 +503,17 @@ export default function Reportes({ leads, vendedores, extras }) {
                                       <td style={{ padding: '6px 8px', color: 'var(--muted)', fontSize: 11 }}>{e.notas || '—'}</td>
                                       <td colSpan={2}></td>
                                       <td style={{ padding: '6px 8px', color: 'var(--blue)', fontWeight: 600 }}>{money(e.monto)}</td>
+                                    </tr>
+                                  ))}
+                                  {m.prereservas.map(p => (
+                                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(99,179,237,.06)', background: 'rgba(99,179,237,.04)' }}>
+                                      <td style={{ padding: '6px 0', fontWeight: 600 }}>
+                                        <span style={{ background: 'rgba(99,179,237,.15)', color: 'var(--blue)', fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3, marginRight: 5 }}>PRE</span>
+                                        {p.nombre}
+                                      </td>
+                                      <td style={{ padding: '6px 8px', color: 'var(--muted)', fontSize: 11 }}>{p.experiencia}</td>
+                                      <td colSpan={2}></td>
+                                      <td style={{ padding: '6px 8px', color: 'var(--blue)', fontWeight: 600 }}>{money(p.monto)}</td>
                                     </tr>
                                   ))}
                                 </tbody>
