@@ -30,6 +30,11 @@ export default function Sidebar({ view, setView, email, onLogout, gcal, onImport
         </button>
       ))}
 
+      {/* Botón logout visible solo en móvil (en la barra inferior) */}
+      <button className="nav-btn nav-logout-mobile" onClick={onLogout}>
+        <span className="ic">🚪</span> Salir
+      </button>
+
       <div className="spacer"></div>
 
       {!isViewer && gcal && (
