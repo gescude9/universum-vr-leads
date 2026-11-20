@@ -354,12 +354,12 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
   td .sub{font-size:11px;margin-top:0}
 
   /* Modal */
-  .overlay{padding:16px 10px 100px}
-  .modal{border-radius:16px}
+  .overlay{padding:12px 8px 80px;overflow-y:auto;align-items:flex-start;-webkit-overflow-scrolling:touch}
+  .modal{border-radius:16px;max-height:none}
   .modal-body{grid-template-columns:1fr;gap:10px;padding:16px}
-  .modal-head{padding:16px}
+  .modal-head{padding:16px;position:sticky;top:0;z-index:2;background:linear-gradient(180deg,#16092f,#16092f)}
   .modal-head h2{font-size:17px}
-  .modal-foot{padding:14px 16px;gap:8px}
+  .modal-foot{padding:14px 16px;gap:8px;position:sticky;bottom:0;z-index:2;background:linear-gradient(180deg,#0e0524,#0e0524)}
   .modal-foot .btn{flex:1;justify-content:center}
   .field input,.field select,.field textarea{font-size:16px;padding:12px}
   .calc-box{flex-direction:column;gap:10px;text-align:center}
