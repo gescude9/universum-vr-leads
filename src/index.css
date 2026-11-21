@@ -162,7 +162,7 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
   border:1px solid var(--border);color:var(--muted)}
 
 /* ---------- Modal ---------- */
-.overlay{position:fixed;inset:0;background:rgba(4,1,12,.72);backdrop-filter:blur(4px);
+.overlay,.modal-overlay{position:fixed;inset:0;background:rgba(4,1,12,.72);backdrop-filter:blur(4px);
   z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
 .modal{background:linear-gradient(180deg,#16092f,#0e0524);border:1px solid var(--border-strong);
   border-radius:20px;width:100%;max-width:680px;box-shadow:var(--shadow);animation:pop .22s ease}
@@ -358,7 +358,7 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
   td .sub{font-size:11px;margin-top:0}
 
   /* Modal */
-  .overlay{padding:0;overflow:hidden;align-items:flex-end}
+  .overlay,.modal-overlay{padding:0;overflow:hidden;align-items:flex-end}
   .modal{
     border-radius:20px 20px 0 0;max-height:92dvh;max-height:92vh;
     display:flex;flex-direction:column;width:100%;max-width:100%
