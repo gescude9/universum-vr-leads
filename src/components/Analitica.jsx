@@ -351,11 +351,11 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
     return Object.values(m).filter(c => c.visitas > 1).sort((a, b) => b.visitas - a.visitas).slice(0, 8)
   }, [leads])
 
-  // Performance vendedores por mes (últimos 6 meses)
+  // Performance vendedores por mes (año completo)
   const perfVendedores = useMemo(() => {
     const now = new Date()
     const months = []
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
       months.push({ year: d.getFullYear(), month: d.getMonth(), label: MESES[d.getMonth()] })
     }
@@ -487,7 +487,7 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
         </Card>
         {/* Performance vendedores */}
         {perfVendedores.length > 0 && (
-          <Card title="Performance por vendedor · últimos 6 meses" icon="🏆" wide>
+          <Card title="Performance por vendedor · últimos 12 meses" icon="🏆" wide>
             <VendedorPerf vendedores={perfVendedores} money={money} />
           </Card>
         )}
