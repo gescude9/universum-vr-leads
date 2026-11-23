@@ -136,10 +136,21 @@ export default function Prereservas({ prereservas, vendedores, onNew, onEdit, on
   const vName = id => vendedores.find(v => v.id === id)?.nombre || '—'
   const now = new Date()
   const [filtroAno, setFiltroAno] = useState(now.getFullYear())
+  const [busqueda, setBusqueda] = useState('')
 
   const anos = [...new Set(prereservas.map(p => p.ano))].sort((a,b) => b-a)
 
-  const filtrados = prereservas.filter(p => p.ano === filtroAno)
+  const q = busqueda.trim().toLowerCase()
+  const filtrados = prereservas.filter(p => {
+    if (p.ano !== filtroAno) return false
+    if (!q) return true
+    return (
+      (p.nombre || '').toLowerCase().includes(q) ||
+      (p.experiencia || '').toLowerCase().includes(q) ||
+      (vName(p.vendedor) || '').toLowerCase().includes(q) ||
+      (p.notas || '').toLowerCase().includes(q)
+    )
+  })
   const porMes = MESES_ES.map((nombre, i) => {
     const del = filtrados.filter(p => p.mes === i+1)
     return { mes: i+1, nombre, items: del, total: del.reduce((s,p) => s+(Number(p.monto)||0), 0) }
@@ -155,6 +166,12 @@ export default function Prereservas({ prereservas, vendedores, onNew, onEdit, on
           <p>Reservas con monto y experiencia confirmados</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar pre-reserva..."
+            style={{ background: 'var(--panel-solid)', border: '1px solid var(--border)', color: 'var(--text)', font: 'inherit', fontSize: 14, padding: '9px 12px', borderRadius: 'var(--radius-sm)', width: 190 }}
+          />
           <select value={filtroAno} onChange={e => setFiltroAno(Number(e.target.value))}
             style={{ background: 'var(--panel-solid)', border: '1px solid var(--border)', color: 'var(--text)', font: 'inherit', fontSize: 14, padding: '9px 12px', borderRadius: 'var(--radius-sm)' }}>
             {(anos.length > 0 ? anos : [now.getFullYear()]).map(a => <option key={a} value={a}>{a}</option>)}

@@ -107,13 +107,20 @@ export default function Extras({ extras, vendedores, onNew, onEdit, onDelete, is
   const vName = id => vendedores.find(v => v.id === id)?.nombre || '-'
   const now = new Date()
   const [filtroAno, setFiltroAno] = useState(now.getFullYear())
+  const [busqueda, setBusqueda] = useState('')
 
   const anos = [...new Set(extras.map(e => e.ano))].sort((a,b)=>b-a)
-  if (!anos.includes(filtroAno) && anos.length > 0) {
-    // no action needed, just show all
-  }
 
-  const filtrados = extras.filter(e => e.ano === filtroAno)
+  const q = busqueda.trim().toLowerCase()
+  const filtrados = extras.filter(e => {
+    if (e.ano !== filtroAno) return false
+    if (!q) return true
+    return (
+      (e.nombre || '').toLowerCase().includes(q) ||
+      (vName(e.vendedor) || '').toLowerCase().includes(q) ||
+      (e.notas || '').toLowerCase().includes(q)
+    )
+  })
   const porMes = MESES_ES.map((nombre, i) => {
     const del = filtrados.filter(e => e.mes === i+1)
     return { mes: i+1, nombre, items: del, total: del.reduce((s,e)=>s+(Number(e.monto)||0),0) }
@@ -129,6 +136,12 @@ export default function Extras({ extras, vendedores, onNew, onEdit, onDelete, is
           <p>Ingresos adicionales no relacionados a cumpleaños del sistema</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar extra..."
+            style={{ background: 'var(--panel-solid)', border: '1px solid var(--border)', color: 'var(--text)', font: 'inherit', fontSize: 14, padding: '9px 12px', borderRadius: 'var(--radius-sm)', width: 180 }}
+          />
           <select value={filtroAno} onChange={e => setFiltroAno(Number(e.target.value))}
             style={{ background: 'var(--panel-solid)', border: '1px solid var(--border)', color: 'var(--text)', font: 'inherit', fontSize: 14, padding: '9px 12px', borderRadius: 'var(--radius-sm)' }}>
             {(anos.length > 0 ? anos : [now.getFullYear()]).map(a => <option key={a} value={a}>{a}</option>)}
