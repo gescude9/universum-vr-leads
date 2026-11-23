@@ -63,47 +63,6 @@ function DonutChart({ data, size = 160, thickness = 32, centerLabel = '', center
         ))}
       </div>
 
-      {/* Panel de desglose al hacer click en gráficas */}
-      {filtroActivo && (
-        <div style={{ marginTop: 24, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', gridColumn: '1/-1' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <span style={{ fontFamily: 'Space Grotesk,sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-              {filtroActivo.titulo}
-            </span>
-            <button onClick={() => setFiltroActivo(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
-            {(filtroActivo.leads || []).sort((a,b) => (a.fecha||'').localeCompare(b.fecha||'')).map(l => (
-              <div key={l.id} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.nombre}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                    {l.fecha || ''}{l.hora ? ' · ' + l.hora.slice(0,5) : ''}{l.personas ? ' · ' + l.personas + 'p' : ''}{l.paquete ? ' · ' + l.paquete : ''}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#3b82f6' }}>{money(l.monto_cerrado)}</div>
-                  <div style={{ fontSize: 10, color: '#10b981' }}>{money(l.comision)} com.</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', gap: 24 }}>
-            <div>
-              <span style={{ fontSize: 11, color: 'var(--muted)' }}>Total vendido </span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#3b82f6' }}>{money((filtroActivo.leads||[]).reduce((s,l)=>s+(Number(l.monto_cerrado)||0),0))}</span>
-            </div>
-            <div>
-              <span style={{ fontSize: 11, color: 'var(--muted)' }}>Total comisión </span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#10b981' }}>{money((filtroActivo.leads||[]).reduce((s,l)=>s+(Number(l.comision)||0),0))}</span>
-            </div>
-            <div>
-              <span style={{ fontSize: 11, color: 'var(--muted)' }}>Personas promedio </span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#a855f7' }}>{Math.round((filtroActivo.leads||[]).reduce((s,l)=>s+(Number(l.personas)||0),0)/Math.max((filtroActivo.leads||[]).length,1))}p</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -535,6 +494,39 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
           )}
         </Card>
       </div>
+
+      {/* Panel de desglose al hacer click en gráficas */}
+      {filtroActivo && (
+        <div style={{ marginTop: 24, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <span style={{ fontFamily: 'Space Grotesk,sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+              {filtroActivo.titulo}
+            </span>
+            <button onClick={() => setFiltroActivo(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+            {(filtroActivo.leads || []).sort((a,b) => (a.fecha||'').localeCompare(b.fecha||'')).map(l => (
+              <div key={l.id} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.nombre}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                    {l.fecha || ''}{l.hora ? ' · ' + l.hora.slice(0,5) : ''}{l.personas ? ' · ' + l.personas + 'p' : ''}{l.paquete ? ' · ' + l.paquete : ''}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#3b82f6' }}>{money(l.monto_cerrado)}</div>
+                  <div style={{ fontSize: 10, color: '#10b981' }}>{money(l.comision)} com.</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <div><span style={{ fontSize: 11, color: 'var(--muted)' }}>Total vendido </span><span style={{ fontSize: 14, fontWeight: 800, color: '#3b82f6' }}>{money((filtroActivo.leads||[]).reduce((s,l)=>s+(Number(l.monto_cerrado)||0),0))}</span></div>
+            <div><span style={{ fontSize: 11, color: 'var(--muted)' }}>Total comisión </span><span style={{ fontSize: 14, fontWeight: 800, color: '#10b981' }}>{money((filtroActivo.leads||[]).reduce((s,l)=>s+(Number(l.comision)||0),0))}</span></div>
+            <div><span style={{ fontSize: 11, color: 'var(--muted)' }}>Personas promedio </span><span style={{ fontSize: 14, fontWeight: 800, color: '#a855f7' }}>{Math.round((filtroActivo.leads||[]).reduce((s,l)=>s+(Number(l.personas)||0),0)/Math.max((filtroActivo.leads||[]).length,1))}p</span></div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
