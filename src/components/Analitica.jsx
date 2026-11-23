@@ -261,6 +261,10 @@ function VendedorPerf({ vendedores, money }) {
                     </div>
                   </div>
                 ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>Total comisión {selMes.label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--good)' }}>{money(selMes.comision)}</div>
+                </div>
               </div>
             )}
           </div>
