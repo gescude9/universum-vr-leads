@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { money } from '../lib/helpers'
 
 const DIAS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
@@ -389,6 +389,13 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
   }, [cerrados, vendedores, prereservas])
 
   const [filtroActivo, setFiltroActivo] = useState(null) // { titulo, leads }
+  const desglosRef = useRef(null)
+
+  useEffect(() => {
+    if (filtroActivo && desglosRef.current) {
+      setTimeout(() => desglosRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+    }
+  }, [filtroActivo])
 
   const totalCerrados = cerrados.length
   const pctFinSemana = totalCerrados > 0 ? Math.round(((diasDist[0].value + diasDist[6].value) / totalCerrados) * 100) : 0
@@ -497,7 +504,7 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
 
       {/* Panel de desglose al hacer click en gráficas */}
       {filtroActivo && (
-        <div style={{ marginTop: 24, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px' }}>
+        <div ref={desglosRef} style={{ marginTop: 24, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <span style={{ fontFamily: 'Space Grotesk,sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
               {filtroActivo.titulo}
