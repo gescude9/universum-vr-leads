@@ -399,7 +399,10 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
   }, [filtroActivo])
 
   const totalCerrados = cerrados.length
-  const pctFinSemana = totalCerrados > 0 ? Math.round(((diasDist[0].value + diasDist[6].value) / totalCerrados) * 100) : 0
+  const leadsSab = cerrados.filter(l => l.fecha && new Date(l.fecha+'T12:00:00').getDay() === 6)
+  const leadsDom = cerrados.filter(l => l.fecha && new Date(l.fecha+'T12:00:00').getDay() === 0)
+  const pctSab = totalCerrados > 0 ? Math.round((leadsSab.length / totalCerrados) * 100) : 0
+  const pctDom = totalCerrados > 0 ? Math.round((leadsDom.length / totalCerrados) * 100) : 0
   const ingresoTotal = cerrados.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
   const horaPico = horariosDist[0]?.label || '—'
   const grupoPico = grupoDist[0]?.label || '—'
@@ -423,8 +426,10 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
           onClick={() => horariosDist[0]?.leads?.length && setFiltroActivo({ titulo: `⏰ ${horaPico} · ${horariosDist[0].leads.length} eventos`, leads: horariosDist[0].leads })} />
         <KPI icon="👥" value={grupoPico} label="Grupo más común" color="#3b82f6" sub="personas por evento"
           onClick={() => grupoDist[0]?.leads?.length && setFiltroActivo({ titulo: `👥 Grupos de ${grupoPico} · ${grupoDist[0].leads.length} eventos`, leads: grupoDist[0].leads })} />
-        <KPI icon="🗓️" value={`${pctFinSemana}%`} label="Fin de semana" color="#06b6d4" sub="sáb + dom"
-          onClick={() => { const finSem = cerrados.filter(l => { const d = l.fecha ? new Date(l.fecha+'T12:00:00').getDay() : -1; return d === 0 || d === 6 }); finSem.length && setFiltroActivo({ titulo: `🗓️ Fin de semana · ${finSem.length} eventos`, leads: finSem }) }} />
+        <KPI icon="🗓️" value={`${pctSab}%`} label="Sábados" color="#06b6d4" sub={`${leadsSab.length} eventos`}
+          onClick={() => leadsSab.length && setFiltroActivo({ titulo: `🗓️ Sábados · ${leadsSab.length} eventos`, leads: leadsSab })} />
+        <KPI icon="🗓️" value={`${pctDom}%`} label="Domingos" color="#8b5cf6" sub={`${leadsDom.length} eventos`}
+          onClick={() => leadsDom.length && setFiltroActivo({ titulo: `🗓️ Domingos · ${leadsDom.length} eventos`, leads: leadsDom })} />
         <KPI icon="💰" value={`$${Math.round(ingresoTotal).toLocaleString()}`} label="Ingresos totales" color="#10b981" sub="leads cerrados"
           onClick={() => cerrados.length && setFiltroActivo({ titulo: `💰 Ingresos totales · ${cerrados.length} eventos`, leads: [...cerrados].sort((a,b) => (Number(b.monto_cerrado)||0)-(Number(a.monto_cerrado)||0)) })} />
       </div>
@@ -437,7 +442,7 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
         <Card title="Días de la semana" icon="📅">
           <VBar data={diasDist} onClickItem={d => d.leads?.length && setFiltroActivo({ titulo: `📅 ${d.label} · ${d.leads.length} eventos`, leads: d.leads })} />
           <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, margin: '8px 0 0' }}>
-            Fin de semana = <strong style={{ color: '#a855f7' }}>{pctFinSemana}%</strong> del negocio
+            Fin de semana = <strong style={{ color: '#a855f7' }}>{pctSab + pctDom}%</strong> del negocio
           </p>
         </Card>
         <Card title="Eventos por mes · últimos 12 meses" icon="📈" wide>
