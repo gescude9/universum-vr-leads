@@ -24,6 +24,7 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
 
   const cerrados = leads.filter(l => l.estado === 'Cerrado')
   const vName = id => vendedores.find(v => v.id === id)?.nombre || '-'
+  const vComisionPct = id => vendedores.find(v => v.id === id)?.comision_pct || 0
 
   function getFechaVenta(lead) { return lead.fecha_venta || lead.fecha || '' }
   function getMes(lead) { return parseInt(getFechaVenta(lead).slice(5, 7)) - 1 }
@@ -106,6 +107,7 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
         totalExtras: totalExtrasM,
         totalPrereservas: totalPrereservasM,
         comision: del.reduce((s,l) => s+(Number(l.comision)||0),0),
+        comisionExtras: delExtras.reduce((s,e) => s+(Number(e.monto)||0)*0.93*((Number(v.comision_pct)||0)/100),0),
         eventos: del.sort((a,b) => getFechaVenta(a).localeCompare(getFechaVenta(b))),
         extras: delExtras,
         prereservas: delPrereservas,
@@ -121,6 +123,7 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
       totalLeadsAno,
       totalExtrasAno,
       totalPrereservasAno,
+      comisionExtrasAno: susExtras.reduce((s,e) => s+(Number(e.monto)||0)*0.93*((Number(v.comision_pct)||0)/100),0),
       comisionAno: sus.reduce((s,l) => s+(Number(l.comision)||0),0),
       cantidadAno: sus.length,
       cantidadExtrasAno: susExtras.length,
@@ -279,7 +282,7 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
                     <div className="table-wrap">
                       <table>
                         <thead><tr>
-                          <th>Nombre / Descripción</th><th>Vendedor</th><th>Monto</th><th>Notas</th>
+                          <th>Nombre / Descripción</th><th>Vendedor</th><th>Monto</th><th>Comisión</th><th>Notas</th>
                         </tr></thead>
                         <tbody>
                           {m.extras.map(e => (
@@ -290,6 +293,7 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
                               </td>
                               <td data-label="Vendedor">{vName(e.vendedor)}</td>
                               <td data-label="Monto" style={{ color: 'var(--blue)', fontWeight: 600 }}>{money(e.monto)}</td>
+                              <td data-label="Comisión" style={{ color: 'var(--good)', fontWeight: 600 }}>{money(Number(e.monto)*0.93*(Number(vComisionPct(e.vendedor))/100))}</td>
                               <td data-label="Notas" style={{ color: 'var(--muted)', fontSize: 12 }}>{e.notas || '-'}</td>
                             </tr>
                           ))}
@@ -299,6 +303,9 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
                             </td>
                             <td style={{ color: 'var(--blue)', fontWeight: 700, padding: '12px 16px' }}>
                               {money(m.totalExtras)}
+                            </td>
+                            <td style={{ color: 'var(--good)', fontWeight: 700, padding: '12px 16px' }}>
+                              {money(m.comisionExtras)}
                             </td>
                             <td></td>
                           </tr>
@@ -364,6 +371,7 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
                       total: suyos.reduce((s,l) => s+(Number(l.monto_cerrado)||0),0)
                            + susExtras.reduce((s,e) => s+(Number(e.monto)||0),0)
                            + susPrereservas.reduce((s,p) => s+(Number(p.monto)||0),0),
+                      comisionExtras: susExtras.reduce((s,e) => s+(Number(e.monto)||0)*0.93*((Number(v.comision_pct)||0)/100),0),
                       comision: suyos.reduce((s,l) => s+(Number(l.comision)||0),0),
                     }
                   }).filter(Boolean).sort((a,b) => b.cantidad - a.cantidad)
@@ -390,7 +398,7 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
                                     </span>
                                   </td>
                                   <td style={{ color: 'var(--blue)', fontWeight: 600 }}>{money(v.total)}</td>
-                                  <td style={{ color: 'var(--good)', fontWeight: 600 }}>{money(v.comision)}</td>
+                                  <td style={{ color: 'var(--good)', fontWeight: 600 }}>{money(v.comision + v.comisionExtras)}</td>
                                 </tr>
                                 {v.eventos.map(l => (
                                   <tr key={l.id} style={{ background: 'rgba(140,108,255,.03)' }}>
@@ -408,7 +416,7 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
                                     </td>
                                     <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>—</td>
                                     <td style={{ color: 'var(--blue)', fontSize: 12 }}>{money(e.monto)}</td>
-                                    <td></td>
+                                    <td style={{ color: 'var(--good)', fontSize: 12 }}>{money(Number(e.monto)*0.93*(Number(vComisionPct(e.vendedor))/100))}</td>
                                   </tr>
                                 ))}
                                 {v.prereservas.map(p => (
@@ -469,7 +477,7 @@ export default function Reportes({ leads, vendedores, extras, prereservas }) {
                           : <span style={{ color: 'var(--muted)' }}>—</span>}
                       </td>
                       <td data-label="Total" style={{ color: 'var(--blue)', fontWeight: 600 }}>{money(v.totalAno)}</td>
-                      <td data-label="Comision" style={{ color: 'var(--good)', fontWeight: 600 }}>{money(v.comisionAno)}</td>
+                      <td data-label="Comision" style={{ color: 'var(--good)', fontWeight: 600 }}>{money(v.comisionAno + v.comisionExtrasAno)}</td>
                     </tr>
                     {vendedorSeleccionado === v.id && (
                       <tr key={v.id + '-detail'} id="detalle-vendedor">

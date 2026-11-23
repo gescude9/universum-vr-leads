@@ -162,7 +162,7 @@ export default function ImportGoogleCalendar({ gcal, vendedores, onImportar, onC
         estado:         'Cerrado',
         monto_estimado: ev.montoCerrado,
         monto_cerrado:  ev.montoCerrado,
-        comision:       +(ev.montoCerrado * 0.10).toFixed(2),
+        comision:       +(ev.montoCerrado * 0.93 * 0.10).toFixed(2),
         notas:          ev.notas,
       })
       count++

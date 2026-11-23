@@ -33,7 +33,7 @@ export default function LeadModal({ lead, preset, vendedores, onSave, onClose, o
   const desglose = desglosePrecio(f.paquete, f.personas)
   const vendedorObj = vendedores.find(v => v.id === f.vendedor)
   const pct = vendedorObj?.comision_pct != null ? Number(vendedorObj.comision_pct) / 100 : COMISION
-  const comision = +((Number(f.monto_cerrado) || 0) * pct).toFixed(2)
+  const comision = +((Number(f.monto_cerrado) || 0) * 0.93 * pct).toFixed(2)
 
   function setFecha(v) {
     const lista = horasDe(v)
