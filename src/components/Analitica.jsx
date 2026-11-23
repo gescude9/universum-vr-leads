@@ -3,7 +3,7 @@ import { money } from '../lib/helpers'
 
 const DIAS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-const PALETTE = ['#a855f7','#6366f1','#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899']
+const PALETTE = ['#a855f7','#10b981','#f59e0b','#06b6d4','#ef4444','#6366f1','#ec4899','#3b82f6']
 
 function DonutChart({ data, size = 160, thickness = 32, centerLabel = '', centerSub = '', onClickSlice }) {
   const [hovered, setHovered] = useState(null)
