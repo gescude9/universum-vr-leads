@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { money, fmtFecha } from '../lib/helpers'
 import { ESTADOS } from '../constants'
 
-export default function Leads({ leads, vendedores, onNew, onEdit, onDelete, isViewer }) {
+export default function Leads({ leads, vendedores, prereservas = [], onNew, onEdit, onDelete, isViewer }) {
   const { t } = useTranslation()
   const [q, setQ] = useState('')
   const [fe, setFe] = useState('')
   const [fv, setFv] = useState('')
+  const [mostrarPre, setMostrarPre] = useState(true)
 
   const vName = id => vendedores.find(v => v.id === id)?.nombre || '—'
 
@@ -15,6 +16,13 @@ export default function Leads({ leads, vendedores, onNew, onEdit, onDelete, isVi
   if (q) { const tx = q.toLowerCase(); rows = rows.filter(l => `${l.nombre} ${l.telefono||''} ${l.contacto||''}`.toLowerCase().includes(tx)) }
   if (fe) rows = rows.filter(l => l.estado === fe)
   if (fv) rows = rows.filter(l => l.vendedor === fv)
+
+  const preRows = mostrarPre && !fe ? (prereservas || []).filter(p => {
+    if (fv && p.vendedor !== fv) return false
+    if (!q) return true
+    const tx = q.toLowerCase()
+    return `${p.nombre} ${p.experiencia||''}`.toLowerCase().includes(tx)
+  }) : []
 
   return (
     <section className="view">
@@ -32,6 +40,14 @@ export default function Leads({ leads, vendedores, onNew, onEdit, onDelete, isVi
           <option value="">{t('leads.todosVendedores')}</option>
           {vendedores.map(v => <option key={v.id} value={v.id}>{v.nombre}</option>)}
         </select>
+        <button
+          className={`btn btn-sm ${mostrarPre ? 'btn-ghost' : 'btn-ghost'}`}
+          onClick={() => setMostrarPre(p => !p)}
+          style={{ opacity: mostrarPre ? 1 : 0.5, fontSize: 12 }}
+          title="Mostrar/ocultar pre-reservas"
+        >
+          📋 Pre-reservas {mostrarPre ? '✓' : ''}
+        </button>
       </div>
       <div className="table-wrap">
         <table>
@@ -48,25 +64,52 @@ export default function Leads({ leads, vendedores, onNew, onEdit, onDelete, isVi
             <th></th>
           </tr></thead>
           <tbody>
-            {rows.length === 0 ? (
+            {rows.length === 0 && preRows.length === 0 ? (
               <tr><td colSpan={10} className="empty"><div className="big">✨</div>{t('leads.sinLeads')}</td></tr>
-            ) : rows.map(l => (
-              <tr key={l.id}>
-                <td data-label={t('leads.columnas.cliente')}><div className="strong">{l.nombre}</div><div className="sub">{l.contacto || l.telefono || ''}</div></td>
-                <td data-label={t('leads.columnas.cumpleanos')}>{fmtFecha(l.fecha)}<div className="sub">{l.hora || ''}</div></td>
-                <td data-label={t('leads.columnas.paquete')}><span className="pkg-tag">{l.paquete}</span>{l.premium && <div className="sub">{l.premium}</div>}</td>
-                <td data-label={t('leads.columnas.personas')}>{l.personas}</td>
-                <td data-label={t('leads.columnas.vendedor')}>{vName(l.vendedor)}</td>
-                <td data-label={t('leads.columnas.estado')}><span className={`pill st-${l.estado}`}>{t(`estados.${l.estado}`)}</span></td>
-                <td data-label={t('leads.columnas.estimado')}>{money(l.monto_estimado)}</td>
-                <td data-label={t('leads.columnas.cerrado')}>{l.estado === 'Cerrado' ? money(l.monto_cerrado) : '—'}</td>
-                <td data-label={t('leads.columnas.comision')} style={{ color: 'var(--good)', fontWeight: 600 }}>{l.estado === 'Cerrado' ? money(l.comision) : '—'}</td>
-                <td>
-                  {!isViewer && <button className="btn btn-ghost btn-sm" onClick={() => onEdit(l)}>{t('leads.editar')}</button>}{' '}
-                  {!isViewer && <button className="btn btn-danger btn-sm" onClick={() => onDelete(l)}>{t('leads.eliminar')}</button>}
-                </td>
-              </tr>
-            ))}
+            ) : <>
+              {rows.map(l => (
+                <tr key={l.id}>
+                  <td data-label={t('leads.columnas.cliente')}><div className="strong">{l.nombre}</div><div className="sub">{l.contacto || l.telefono || ''}</div></td>
+                  <td data-label={t('leads.columnas.cumpleanos')}>{fmtFecha(l.fecha)}<div className="sub">{l.hora || ''}</div></td>
+                  <td data-label={t('leads.columnas.paquete')}><span className="pkg-tag">{l.paquete}</span>{l.premium && <div className="sub">{l.premium}</div>}</td>
+                  <td data-label={t('leads.columnas.personas')}>{l.personas}</td>
+                  <td data-label={t('leads.columnas.vendedor')}>{vName(l.vendedor)}</td>
+                  <td data-label={t('leads.columnas.estado')}><span className={`pill st-${l.estado}`}>{t(`estados.${l.estado}`)}</span></td>
+                  <td data-label={t('leads.columnas.estimado')}>{money(l.monto_estimado)}</td>
+                  <td data-label={t('leads.columnas.cerrado')}>{l.estado === 'Cerrado' ? money(l.monto_cerrado) : '—'}</td>
+                  <td data-label={t('leads.columnas.comision')} style={{ color: 'var(--good)', fontWeight: 600 }}>{l.estado === 'Cerrado' ? money(l.comision) : '—'}</td>
+                  <td>
+                    {!isViewer && <button className="btn btn-ghost btn-sm" onClick={() => onEdit(l)}>{t('leads.editar')}</button>}{' '}
+                    {!isViewer && <button className="btn btn-danger btn-sm" onClick={() => onDelete(l)}>{t('leads.eliminar')}</button>}
+                  </td>
+                </tr>
+              ))}
+              {preRows.map(p => (
+                <tr key={`pre-${p.id}`} style={{ background: 'rgba(99,179,237,.04)' }}>
+                  <td data-label={t('leads.columnas.cliente')}>
+                    <div className="strong">
+                      <span style={{ background: 'rgba(99,179,237,.15)', color: 'var(--blue)', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, marginRight: 6 }}>PRE</span>
+                      {p.nombre}
+                    </div>
+                  </td>
+                  <td data-label={t('leads.columnas.cumpleanos')}>
+                    <span style={{ color: 'var(--muted)', fontSize: 12 }}>
+                      {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][p.mes-1]} {p.ano}
+                    </span>
+                  </td>
+                  <td data-label={t('leads.columnas.paquete')}><span className="pkg-tag">{p.experiencia}</span></td>
+                  <td data-label={t('leads.columnas.personas')}>{p.personas}p</td>
+                  <td data-label={t('leads.columnas.vendedor')}>{vName(p.vendedor)}</td>
+                  <td data-label={t('leads.columnas.estado')}>
+                    <span className="pill" style={{ background: 'rgba(99,179,237,.15)', color: 'var(--blue)' }}>Pre-reserva</span>
+                  </td>
+                  <td>—</td>
+                  <td style={{ color: 'var(--blue)', fontWeight: 600 }}>{money(p.monto)}</td>
+                  <td>—</td>
+                  <td></td>
+                </tr>
+              ))}
+            </>}
           </tbody>
         </table>
       </div>

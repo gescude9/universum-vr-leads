@@ -313,7 +313,7 @@ export default function App() {
     }
   }
 
-  // ---------- Handlers de prereservas ----------
+  // ---------- Handlers de pre-reservas ----------
   async function onSavePr(payload, id) {
     try {
       setSaving(true)
@@ -391,6 +391,7 @@ export default function App() {
             <Leads
               leads={leads}
               vendedores={vendedores}
+              prereservas={prereservas}
               onNew={() => openNewLead()}
               isViewer={isViewer}
               onEdit={openEditLead}
@@ -481,7 +482,7 @@ export default function App() {
       )}
       {prModal && (
         <PrereservaModal
-          key={prModal.pr?.id || 'nueva-pr'}
+          key={prModal.pr?.id || 'nueva-prereserva'}
           pr={prModal.pr}
           vendedores={vendedores}
           onSave={onSavePr}
