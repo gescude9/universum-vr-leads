@@ -13,6 +13,8 @@ export default function Sidebar({ view, setView, email, onLogout, gcal, onImport
     { id: 'calendario',  label: t('nav.calendario'),   ic: '▦' },
     { id: 'reportes',    label: t('nav.reportes'),     ic: '📊' },
     { id: 'extras',      label: 'Extras',              ic: '➕' },
+    { id: 'prereservas', label: 'Pre-reservas',        ic: '📋' },
+    { id: 'analitica',   label: 'Analítica',           ic: '📈' },
   ]
 
   return (
@@ -28,6 +30,11 @@ export default function Sidebar({ view, setView, email, onLogout, gcal, onImport
           <span className="ic">{it.ic}</span> {it.label}
         </button>
       ))}
+
+      {/* Botón logout visible solo en móvil */}
+      <button className="nav-btn nav-logout-mobile" onClick={onLogout}>
+        <span className="ic">🚪</span> Salir
+      </button>
 
       <div className="spacer"></div>
 
