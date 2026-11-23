@@ -73,7 +73,7 @@ function DonutChart({ data, size = 160, thickness = 32, centerLabel = '', center
             <button onClick={() => setFiltroActivo(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
-            {filtroActivo.leads.sort((a,b) => (a.fecha||'').localeCompare(b.fecha||'')).map(l => (
+            {(filtroActivo.leads || []).sort((a,b) => (a.fecha||'').localeCompare(b.fecha||'')).map(l => (
               <div key={l.id} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.nombre}</div>
@@ -91,15 +91,15 @@ function DonutChart({ data, size = 160, thickness = 32, centerLabel = '', center
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', gap: 24 }}>
             <div>
               <span style={{ fontSize: 11, color: 'var(--muted)' }}>Total vendido </span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#3b82f6' }}>{money(filtroActivo.leads.reduce((s,l)=>s+(Number(l.monto_cerrado)||0),0))}</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#3b82f6' }}>{money((filtroActivo.leads||[]).reduce((s,l)=>s+(Number(l.monto_cerrado)||0),0))}</span>
             </div>
             <div>
               <span style={{ fontSize: 11, color: 'var(--muted)' }}>Total comisión </span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#10b981' }}>{money(filtroActivo.leads.reduce((s,l)=>s+(Number(l.comision)||0),0))}</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#10b981' }}>{money((filtroActivo.leads||[]).reduce((s,l)=>s+(Number(l.comision)||0),0))}</span>
             </div>
             <div>
               <span style={{ fontSize: 11, color: 'var(--muted)' }}>Personas promedio </span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#a855f7' }}>{Math.round(filtroActivo.leads.reduce((s,l)=>s+(Number(l.personas)||0),0)/filtroActivo.leads.length)}p</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#a855f7' }}>{Math.round((filtroActivo.leads||[]).reduce((s,l)=>s+(Number(l.personas)||0),0)/Math.max((filtroActivo.leads||[]).length,1))}p</span>
             </div>
           </div>
         </div>
@@ -372,12 +372,12 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
     const now = new Date(), months = []
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      months.push({ year: d.getFullYear(), month: d.getMonth(), label: MESES[d.getMonth()], value: 0 })
+      months.push({ year: d.getFullYear(), month: d.getMonth(), label: MESES[d.getMonth()], value: 0, leads: [] })
     }
     cerrados.forEach(l => {
       const d = new Date(l.fecha + 'T12:00:00')
       const m = months.find(x => x.year === d.getFullYear() && x.month === d.getMonth())
-      if (m) { m.value++; m.leads = m.leads || []; m.leads.push(l) }
+      if (m) { m.value++; m.leads.push(l) }
     })
     return months
   }, [cerrados])
