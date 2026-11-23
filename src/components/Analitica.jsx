@@ -214,12 +214,20 @@ export default function Analitica({ leads = [] }) {
     cerrados.forEach(l => {
       const p = Number(l.personas) || 0; if (p <= 0) return
       const b = p <= 5 ? '1-5p' : p <= 10 ? '6-10p' : p <= 15 ? '11-15p' : p <= 20 ? '16-20p' : '21+p'
+      const midP = p <= 5 ? 3 : p <= 10 ? 8 : p <= 15 ? 13 : p <= 20 ? 18 : 25
       const o = p <= 5 ? 1 : p <= 10 ? 2 : p <= 15 ? 3 : p <= 20 ? 4 : 5
-      if (!m[b]) m[b] = { sum: 0, count: 0, order: o }
+      if (!m[b]) m[b] = { sum: 0, sumP: 0, count: 0, order: o, midP }
       const v = Number(l.monto_cerrado) || Number(l.monto_estimado) || 0
-      if (v > 0) { m[b].sum += v; m[b].count++ }
+      if (v > 0) { m[b].sum += v; m[b].sumP += v / p; m[b].count++ }
     })
-    return Object.entries(m).map(([label, { sum, count, order }]) => ({ label, value: count > 0 ? Math.round(sum / count) : 0, order })).filter(d => d.value > 0).sort((a, b) => a.order - b.order)
+    return Object.entries(m)
+      .map(([label, { sum, sumP, count, order, midP }]) => ({
+        label, order, midP,
+        avg: count > 0 ? Math.round(sum / count) : 0,
+        avgPerPerson: count > 0 ? Math.round(sumP / count) : 0,
+        count
+      }))
+      .filter(d => d.avg > 0).sort((a, b) => a.order - b.order)
   }, [cerrados])
 
   const tendencia = useMemo(() => {
@@ -292,10 +300,35 @@ export default function Analitica({ leads = [] }) {
           <HBar data={grupoDist} color="#a855f7" />
         </Card>
         <Card title="Ticket promedio por grupo" icon="💰">
-          {ticketPorGrupo.length > 0
-            ? <HBar data={ticketPorGrupo} color="#f59e0b" format={v => `$${v.toLocaleString()}`} />
-            : <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Sin datos de monto suficientes</p>
-          }
+          {ticketPorGrupo.length > 0 ? (
+            <>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: 11, color: 'var(--muted)' }}>Las barras muestran el ticket total por evento · el número pequeño es por persona</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {ticketPorGrupo.map((d, i) => {
+                  const maxAvg = Math.max(...ticketPorGrupo.map(x => x.avg), 1)
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 48, fontSize: 11, color: 'var(--muted)', textAlign: 'right', flexShrink: 0 }}>{d.label}</span>
+                      <div style={{ flex: 1, height: 28, background: 'rgba(255,255,255,.05)', borderRadius: 6, overflow: 'hidden', position: 'relative' }}>
+                        <div style={{ height: '100%', width: `${(d.avg / maxAvg) * 100}%`, background: 'linear-gradient(90deg,#f59e0b,#fbbf24)', borderRadius: 6, transition: 'width .7s cubic-bezier(.4,0,.2,1)' }} />
+                        <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: 'rgba(255,255,255,.5)' }}>
+                          ${d.avgPerPerson.toLocaleString()}/persona
+                        </span>
+                      </div>
+                      <span style={{ width: 60, fontSize: 12, fontWeight: 700, color: '#f59e0b', textAlign: 'right', flexShrink: 0 }}>${d.avg.toLocaleString()}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>
+                💡 Ticket total = monto del evento · <span style={{ color: '#fbbf24' }}>$/persona</span> = rentabilidad por cabeza
+              </p>
+            </>
+          ) : (
+            <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Sin datos de monto suficientes</p>
+          )}
         </Card>
         <Card title="Clientes recurrentes" icon="🔄" wide>
           {recurrentes.length > 0 ? (
