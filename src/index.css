@@ -86,8 +86,6 @@ body{
 .logout{font-size:12.5px;color:var(--muted-2);background:none;border:1px solid var(--border);
   padding:9px;border-radius:var(--radius-sm);cursor:pointer;transition:.15s}
 .logout:hover{color:var(--bad);border-color:rgba(255,94,122,.4)}
-/* Logout en barra móvil — oculto en desktop */
-.nav-logout-mobile{display:none}
 
 /* Contenido */
 .main{padding:34px 38px 60px;max-width:1280px;width:100%}
@@ -162,7 +160,7 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
   border:1px solid var(--border);color:var(--muted)}
 
 /* ---------- Modal ---------- */
-.overlay,.modal-overlay{position:fixed;inset:0;background:rgba(4,1,12,.72);backdrop-filter:blur(4px);
+.overlay{position:fixed;inset:0;background:rgba(4,1,12,.72);backdrop-filter:blur(4px);
   z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
 .modal{background:linear-gradient(180deg,#16092f,#0e0524);border:1px solid var(--border-strong);
   border-radius:20px;width:100%;max-width:680px;box-shadow:var(--shadow);animation:pop .22s ease}
@@ -296,8 +294,6 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
     background:linear-gradient(0deg,rgba(10,4,28,.98),rgba(20,10,46,.95));
   }
   .brand,.sidebar .spacer,.user-chip,.logout{display:none}
-  .nav-logout-mobile{display:flex;color:rgba(255,94,122,.7)}
-  .nav-logout-mobile:hover,.nav-logout-mobile:active{color:var(--bad);background:rgba(255,94,122,.12)}
   .nav-btn{
     flex-direction:column;gap:3px;font-size:10px;font-weight:600;
     padding:8px 6px;min-width:60px;max-width:80px;text-align:center;
@@ -358,18 +354,12 @@ td .sub{color:var(--muted);font-size:12px;margin-top:2px}
   td .sub{font-size:11px;margin-top:0}
 
   /* Modal */
-  .overlay,.modal-overlay{padding:0;overflow:hidden;align-items:flex-end}
-  .modal{
-    border-radius:20px 20px 0 0;max-height:92dvh;max-height:92vh;
-    display:flex;flex-direction:column;width:100%;max-width:100%
-  }
-  .modal-head{padding:16px;flex-shrink:0}
+  .overlay{padding:16px 10px 100px}
+  .modal{border-radius:16px}
+  .modal-body{grid-template-columns:1fr;gap:10px;padding:16px}
+  .modal-head{padding:16px}
   .modal-head h2{font-size:17px}
-  .modal-body{
-    grid-template-columns:1fr;gap:10px;padding:16px;
-    overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1
-  }
-  .modal-foot{padding:14px 16px;gap:8px;flex-shrink:0;padding-bottom:max(14px,env(safe-area-inset-bottom))}
+  .modal-foot{padding:14px 16px;gap:8px}
   .modal-foot .btn{flex:1;justify-content:center}
   .field input,.field select,.field textarea{font-size:16px;padding:12px}
   .calc-box{flex-direction:column;gap:10px;text-align:center}
