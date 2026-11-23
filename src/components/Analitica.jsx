@@ -147,18 +147,19 @@ function TrendLine({ data, color = '#10b981', onClickPoint }) {
   )
 }
 
-function KPI({ value, label, color, icon, sub }) {
+function KPI({ value, label, color, icon, sub, onClick }) {
   const [hov, setHov] = useState(false)
   return (
     <div
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
+      onClick={onClick}
       style={{
         background: hov ? `${color}11` : 'var(--panel)',
         border: `1px solid ${hov ? color : 'var(--border)'}`,
         borderRadius: 16, padding: '20px 18px',
         display: 'flex', flexDirection: 'column', gap: 2,
-        transition: 'all .18s', cursor: 'default',
+        transition: 'all .18s', cursor: onClick ? 'pointer' : 'default',
         boxShadow: hov ? `0 4px 24px -6px ${color}55` : 'none',
       }}>
       <div style={{ fontSize: 26, marginBottom: 6 }}>{icon}</div>
@@ -416,11 +417,16 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
-        <KPI icon="🎉" value={totalCerrados} label="Eventos cerrados" color="#a855f7" sub="cumpleaños completados" />
-        <KPI icon="⏰" value={horaPico} label="Horario estrella" color="#6366f1" sub="hora más popular" />
-        <KPI icon="👥" value={grupoPico} label="Grupo más común" color="#3b82f6" sub="personas por evento" />
-        <KPI icon="🗓️" value={`${pctFinSemana}%`} label="Fin de semana" color="#06b6d4" sub="sáb + dom" />
-        <KPI icon="💰" value={`$${Math.round(ingresoTotal).toLocaleString()}`} label="Ingresos totales" color="#10b981" sub="leads cerrados" />
+        <KPI icon="🎉" value={totalCerrados} label="Eventos cerrados" color="#a855f7" sub="cumpleaños completados"
+          onClick={() => cerrados.length && setFiltroActivo({ titulo: `🎉 Todos los eventos · ${cerrados.length} eventos`, leads: cerrados })} />
+        <KPI icon="⏰" value={horaPico} label="Horario estrella" color="#6366f1" sub="hora más popular"
+          onClick={() => horariosDist[0]?.leads?.length && setFiltroActivo({ titulo: `⏰ ${horaPico} · ${horariosDist[0].leads.length} eventos`, leads: horariosDist[0].leads })} />
+        <KPI icon="👥" value={grupoPico} label="Grupo más común" color="#3b82f6" sub="personas por evento"
+          onClick={() => grupoDist[0]?.leads?.length && setFiltroActivo({ titulo: `👥 Grupos de ${grupoPico} · ${grupoDist[0].leads.length} eventos`, leads: grupoDist[0].leads })} />
+        <KPI icon="🗓️" value={`${pctFinSemana}%`} label="Fin de semana" color="#06b6d4" sub="sáb + dom"
+          onClick={() => { const finSem = cerrados.filter(l => { const d = l.fecha ? new Date(l.fecha+'T12:00:00').getDay() : -1; return d === 0 || d === 6 }); finSem.length && setFiltroActivo({ titulo: `🗓️ Fin de semana · ${finSem.length} eventos`, leads: finSem }) }} />
+        <KPI icon="💰" value={`$${Math.round(ingresoTotal).toLocaleString()}`} label="Ingresos totales" color="#10b981" sub="leads cerrados"
+          onClick={() => cerrados.length && setFiltroActivo({ titulo: `💰 Ingresos totales · ${cerrados.length} eventos`, leads: [...cerrados].sort((a,b) => (Number(b.monto_cerrado)||0)-(Number(a.monto_cerrado)||0)) })} />
       </div>
 
       {/* Charts */}
