@@ -181,7 +181,7 @@ function Card({ title, icon, children, wide }) {
   )
 }
 
-export default function Analitica({ leads = [] }) {
+export default function Analitica({ leads = [], vendedores = [], prereservas = [] }) {
   const cerrados = useMemo(() =>
     leads.filter(l => l.estado === 'Cerrado' && l.fecha && l.hora), [leads])
 
@@ -252,6 +252,43 @@ export default function Analitica({ leads = [] }) {
     })
     return Object.values(m).filter(c => c.visitas > 1).sort((a, b) => b.visitas - a.visitas).slice(0, 8)
   }, [leads])
+
+  // Performance vendedores por mes (últimos 6 meses)
+  const perfVendedores = useMemo(() => {
+    const now = new Date()
+    const months = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      months.push({ year: d.getFullYear(), month: d.getMonth(), label: MESES[d.getMonth()] })
+    }
+    return vendedores.map((v, vi) => {
+      const color = PALETTE[vi % PALETTE.length]
+      const porMes = months.map(m => {
+        const leadsM = cerrados.filter(l => {
+          if (l.vendedor !== v.id) return false
+          const d = new Date(l.fecha + 'T12:00:00')
+          return d.getFullYear() === m.year && d.getMonth() === m.month
+        })
+        const preM = prereservas.filter(p => {
+          if (p.vendedor !== v.id) return false
+          return p.ano === m.year && p.mes === m.month + 1
+        })
+        const totalLeads = leadsM.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
+        const totalPre = preM.reduce((s, p) => s + (Number(p.monto) || 0), 0)
+        return {
+          label: m.label,
+          value: totalLeads + totalPre,
+          eventos: leadsM.length,
+          comision: leadsM.reduce((s, l) => s + (Number(l.comision) || 0), 0),
+        }
+      })
+      const totalAno = porMes.reduce((s, m) => s + m.value, 0)
+      const totalEventos = porMes.reduce((s, m) => s + m.eventos, 0)
+      const totalComision = porMes.reduce((s, m) => s + m.comision, 0)
+      return { ...v, color, porMes, totalAno, totalEventos, totalComision }
+    }).filter(v => v.totalAno > 0 || v.totalEventos > 0)
+      .sort((a, b) => b.totalAno - a.totalAno)
+  }, [cerrados, vendedores, prereservas])
 
   const totalCerrados = cerrados.length
   const pctFinSemana = totalCerrados > 0 ? Math.round(((diasDist[0].value + diasDist[6].value) / totalCerrados) * 100) : 0
@@ -330,6 +367,53 @@ export default function Analitica({ leads = [] }) {
             <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Sin datos de monto suficientes</p>
           )}
         </Card>
+        {/* Performance vendedores */}
+        {perfVendedores.length > 0 && (
+          <Card title="Performance por vendedor · últimos 6 meses" icon="🏆" wide>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+              {perfVendedores.map((v, vi) => {
+                const maxVal = Math.max(...v.porMes.map(m => m.value), 1)
+                return (
+                  <div key={v.id} style={{ background: 'rgba(255,255,255,.03)', border: `1px solid ${v.color}33`, borderRadius: 12, padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: v.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', color: v.color, fontWeight: 800, fontSize: 14, fontFamily: 'Space Grotesk,sans-serif' }}>
+                          {v.nombre.charAt(0)}
+                        </div>
+                        <span style={{ fontFamily: 'Space Grotesk,sans-serif', fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{v.nombre}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontFamily: 'Space Grotesk,sans-serif', fontSize: 16, fontWeight: 800, color: v.color }}>${Math.round(v.totalAno).toLocaleString()}</div>
+                        <div style={{ fontSize: 10, color: 'var(--muted)' }}>{v.totalEventos} eventos · ${Math.round(v.totalComision).toLocaleString()} comisión</div>
+                      </div>
+                    </div>
+                    {/* Mini barras por mes */}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 60 }}>
+                      {v.porMes.map((m, mi) => {
+                        return (
+                          <div key={mi} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}
+                            title={`${m.label}: $${Math.round(m.value).toLocaleString()} · ${m.eventos} eventos`}>
+                            <div style={{ width: '80%', height: `${Math.max((m.value / maxVal) * 100, m.value > 0 ? 4 : 0)}%`, background: v.color, borderRadius: '3px 3px 0 0', opacity: 0.85, transition: 'height .5s cubic-bezier(.4,0,.2,1)' }} />
+                            <span style={{ fontSize: 8, color: 'var(--muted)', marginTop: 2 }}>{m.label}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {/* Meses con valores */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                      {v.porMes.map((m, mi) => (
+                        <span key={mi} style={{ flex: 1, fontSize: 8, color: m.value > 0 ? v.color : 'transparent', textAlign: 'center', fontWeight: 700 }}>
+                          {m.value > 0 ? `$${(m.value/1000).toFixed(0)}k` : '·'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </Card>
+        )}
+
         <Card title="Clientes recurrentes" icon="🔄" wide>
           {recurrentes.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
