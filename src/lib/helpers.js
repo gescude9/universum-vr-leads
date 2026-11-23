@@ -41,7 +41,10 @@ export function ultimaHoraInicio(dateISO) {
 export function horasDe(dateISO) {
   const last = ultimaHoraInicio(dateISO)
   const arr = []
-  for (let h = 11; h <= last; h++) arr.push(String(h).padStart(2, '0') + ':00')
+  for (let h = 11; h <= last; h++) {
+    arr.push(String(h).padStart(2, '0') + ':00')
+    if (h < last) arr.push(String(h).padStart(2, '0') + ':30')
+  }
   return arr
 }
 
