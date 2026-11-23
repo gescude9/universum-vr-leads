@@ -5,7 +5,7 @@ const DIAS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 const PALETTE = ['#a855f7','#6366f1','#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899']
 
-function DonutChart({ data, size = 160, thickness = 32, centerLabel = '', centerSub = '' }) {
+function DonutChart({ data, size = 160, thickness = 32, centerLabel = '', centerSub = '', onClickSlice }) {
   const [hovered, setHovered] = useState(null)
   const total = data.reduce((s, d) => s + d.value, 0)
   if (total === 0) return <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Sin datos aún</p>
@@ -34,6 +34,7 @@ function DonutChart({ data, size = 160, thickness = 32, centerLabel = '', center
               style={{ cursor: 'pointer', transition: 'stroke-width .15s' }}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
+              onClick={() => onClickSlice && onClickSlice(s)}
             />
           ))}
         </svg>
@@ -53,7 +54,7 @@ function DonutChart({ data, size = 160, thickness = 32, centerLabel = '', center
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, minWidth: 90 }}>
         {segments.map((s, i) => (
-          <div key={i} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
+          <div key={i} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)} onClick={() => onClickSlice && onClickSlice(s)}
             style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', opacity: hovered !== null && hovered !== i ? 0.35 : 1, transition: 'opacity .15s' }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
             <span style={{ fontSize: 11, color: 'var(--text)', flex: 1 }}>{s.label}</span>
@@ -61,19 +62,61 @@ function DonutChart({ data, size = 160, thickness = 32, centerLabel = '', center
           </div>
         ))}
       </div>
+
+      {/* Panel de desglose al hacer click en gráficas */}
+      {filtroActivo && (
+        <div style={{ marginTop: 24, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', gridColumn: '1/-1' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <span style={{ fontFamily: 'Space Grotesk,sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+              {filtroActivo.titulo}
+            </span>
+            <button onClick={() => setFiltroActivo(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+            {filtroActivo.leads.sort((a,b) => (a.fecha||'').localeCompare(b.fecha||'')).map(l => (
+              <div key={l.id} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.nombre}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                    {l.fecha || ''}{l.hora ? ' · ' + l.hora.slice(0,5) : ''}{l.personas ? ' · ' + l.personas + 'p' : ''}{l.paquete ? ' · ' + l.paquete : ''}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#3b82f6' }}>{money(l.monto_cerrado)}</div>
+                  <div style={{ fontSize: 10, color: '#10b981' }}>{money(l.comision)} com.</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', gap: 24 }}>
+            <div>
+              <span style={{ fontSize: 11, color: 'var(--muted)' }}>Total vendido </span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#3b82f6' }}>{money(filtroActivo.leads.reduce((s,l)=>s+(Number(l.monto_cerrado)||0),0))}</span>
+            </div>
+            <div>
+              <span style={{ fontSize: 11, color: 'var(--muted)' }}>Total comisión </span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#10b981' }}>{money(filtroActivo.leads.reduce((s,l)=>s+(Number(l.comision)||0),0))}</span>
+            </div>
+            <div>
+              <span style={{ fontSize: 11, color: 'var(--muted)' }}>Personas promedio </span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#a855f7' }}>{Math.round(filtroActivo.leads.reduce((s,l)=>s+(Number(l.personas)||0),0)/filtroActivo.leads.length)}p</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function HBar({ data, color = '#a855f7', format = v => v }) {
+function HBar({ data, color = '#a855f7', format = v => v, onClickItem }) {
   const [hov, setHov] = useState(null)
   const max = Math.max(...data.map(d => d.value), 1)
   if (!data.length) return <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>Sin datos</p>
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
       {data.map((d, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-          onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}>
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: onClickItem && d.leads?.length ? 'pointer' : 'default' }}
+          onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)} onClick={() => onClickItem && onClickItem(d)}>
           <span style={{ width: 52, fontSize: 11, color: 'var(--muted)', textAlign: 'right', flexShrink: 0 }}>{d.label}</span>
           <div style={{ flex: 1, height: 24, background: 'rgba(255,255,255,.05)', borderRadius: 6, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${(d.value / max) * 100}%`, background: d.color || color, borderRadius: 6, transition: 'width .7s cubic-bezier(.4,0,.2,1)', opacity: hov !== null && hov !== i ? 0.3 : 1 }} />
@@ -85,7 +128,7 @@ function HBar({ data, color = '#a855f7', format = v => v }) {
   )
 }
 
-function VBar({ data, color = '#6366f1' }) {
+function VBar({ data, color = '#6366f1', onClickItem }) {
   const [hov, setHov] = useState(null)
   const max = Math.max(...data.map(d => d.value), 1)
   if (!data.length) return <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>Sin datos</p>
@@ -93,7 +136,7 @@ function VBar({ data, color = '#6366f1' }) {
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 130, paddingTop: 16 }}>
       {data.map((d, i) => (
         <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', position: 'relative', cursor: 'pointer' }}
-          onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}>
+          onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)} onClick={() => onClickItem && onClickItem(d)}>
           {hov === i && (
             <div style={{ position: 'absolute', top: -26, left: '50%', transform: 'translateX(-50%)', background: '#1e1b4b', border: '1px solid rgba(255,255,255,.12)', borderRadius: 5, padding: '2px 7px', fontSize: 11, fontWeight: 700, color: d.color || color, whiteSpace: 'nowrap', zIndex: 10 }}>
               {d.value}
@@ -107,7 +150,7 @@ function VBar({ data, color = '#6366f1' }) {
   )
 }
 
-function TrendLine({ data, color = '#10b981' }) {
+function TrendLine({ data, color = '#10b981', onClickPoint }) {
   const [hov, setHov] = useState(null)
   const W = 100, H = 55
   const max = Math.max(...data.map(d => d.value), 1)
@@ -128,7 +171,7 @@ function TrendLine({ data, color = '#10b981' }) {
         {pts.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r={hov === i ? 2.5 : 1.5} fill={color}
             style={{ cursor: 'pointer', transition: 'r .1s' }}
-            onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)} />
+            onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)} onClick={() => onClickPoint && onClickPoint(data[i])} />
         ))}
       </svg>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: -6 }}>
@@ -281,25 +324,27 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
   const grupoDist = useMemo(() => {
     const c = {}
     cerrados.forEach(l => { const p = Number(l.personas) || 0; if (p > 0) c[p] = (c[p] || 0) + 1 })
-    return Object.entries(c).map(([p, v]) => ({ label: `${p}p`, value: v })).sort((a, b) => b.value - a.value).slice(0, 8)
+    return Object.entries(c).map(([p, v]) => ({ label: `${p}p`, value: v, leads: cerrados.filter(l => (Number(l.personas)||0) === Number(p)) })).sort((a, b) => b.value - a.value).slice(0, 8)
   }, [cerrados])
 
   const horariosDist = useMemo(() => {
     const c = {}
     cerrados.forEach(l => { if (!l.hora) return; const h = l.hora.substring(0, 5); c[h] = (c[h] || 0) + 1 })
-    return Object.entries(c).map(([h, v]) => ({ label: h, value: v })).sort((a, b) => b.value - a.value).slice(0, 8)
+    return Object.entries(c).map(([h, v]) => ({ label: h, value: v, leads: cerrados.filter(l => l.hora && l.hora.substring(0,5) === h) })).sort((a, b) => b.value - a.value).slice(0, 8)
   }, [cerrados])
 
   const diasDist = useMemo(() => {
     const c = [0, 0, 0, 0, 0, 0, 0]
     cerrados.forEach(l => { if (l.fecha) c[new Date(l.fecha + 'T12:00:00').getDay()]++ })
-    return DIAS_SHORT.map((label, i) => ({ label, value: c[i], color: i === 0 || i === 6 ? '#a855f7' : '#6366f1' }))
+    return DIAS_SHORT.map((label, i) => ({ label, value: c[i], color: i === 0 || i === 6 ? '#a855f7' : '#6366f1', leads: cerrados.filter(l => l.fecha && new Date(l.fecha+'T12:00:00').getDay()===i) }))
   }, [cerrados])
 
   const paquetesDist = useMemo(() => {
     const c = {}
     cerrados.forEach(l => { const k = l.paquete || 'Sin paquete'; c[k] = (c[k] || 0) + 1 })
-    return Object.entries(c).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value)
+    return Object.entries(c).map(([label, value]) => ({ label, value,
+      leads: cerrados.filter(l => (l.paquete||'Sin paquete') === label)
+    })).sort((a, b) => b.value - a.value)
   }, [cerrados])
 
   const ticketPorGrupo = useMemo(() => {
@@ -332,7 +377,7 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
     cerrados.forEach(l => {
       const d = new Date(l.fecha + 'T12:00:00')
       const m = months.find(x => x.year === d.getFullYear() && x.month === d.getMonth())
-      if (m) m.value++
+      if (m) { m.value++; m.leads = m.leads || []; m.leads.push(l) }
     })
     return months
   }, [cerrados])
@@ -384,6 +429,8 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
       .sort((a, b) => b.totalAno - a.totalAno)
   }, [cerrados, vendedores, prereservas])
 
+  const [filtroActivo, setFiltroActivo] = useState(null) // { titulo, leads }
+
   const totalCerrados = cerrados.length
   const pctFinSemana = totalCerrados > 0 ? Math.round(((diasDist[0].value + diasDist[6].value) / totalCerrados) * 100) : 0
   const ingresoTotal = cerrados.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
@@ -413,22 +460,22 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
       {/* Charts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
         <Card title="Distribución de paquetes" icon="🎮">
-          <DonutChart data={paquetesDist} centerLabel={totalCerrados} centerSub="eventos" />
+          <DonutChart data={paquetesDist} centerLabel={totalCerrados} centerSub="eventos" onClickSlice={d => d.leads?.length && setFiltroActivo({ titulo: `🎮 ${d.label} · ${d.leads.length} eventos`, leads: d.leads })} />
         </Card>
         <Card title="Días de la semana" icon="📅">
-          <VBar data={diasDist} />
+          <VBar data={diasDist} onClickItem={d => d.leads?.length && setFiltroActivo({ titulo: `📅 ${d.label} · ${d.leads.length} eventos`, leads: d.leads })} />
           <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, margin: '8px 0 0' }}>
             Fin de semana = <strong style={{ color: '#a855f7' }}>{pctFinSemana}%</strong> del negocio
           </p>
         </Card>
         <Card title="Eventos por mes · últimos 12 meses" icon="📈" wide>
-          <TrendLine data={tendencia} color="#10b981" />
+          <TrendLine data={tendencia} color="#10b981" onClickPoint={d => d.leads?.length && setFiltroActivo({ titulo: `📅 ${d.label} · ${d.leads.length} eventos`, leads: d.leads })} />
         </Card>
         <Card title="Horarios pico" icon="⏰">
-          <HBar data={horariosDist} color="#06b6d4" />
+          <HBar data={horariosDist} color="#06b6d4" onClickItem={d => d.leads?.length && setFiltroActivo({ titulo: `🕐 ${d.label} · ${d.leads.length} eventos`, leads: d.leads })} />
         </Card>
         <Card title="Tamaño de grupo" icon="👥">
-          <HBar data={grupoDist} color="#a855f7" />
+          <HBar data={grupoDist} color="#a855f7" onClickItem={d => d.leads?.length && setFiltroActivo({ titulo: `👥 Grupos de ${d.label} · ${d.leads.length} eventos`, leads: d.leads })} />
         </Card>
         <Card title="Ticket promedio por grupo" icon="💰">
           {ticketPorGrupo.length > 0 ? (
