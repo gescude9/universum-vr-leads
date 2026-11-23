@@ -109,7 +109,7 @@ function VBar({ data, color = '#6366f1', onClickItem }) {
   )
 }
 
-function TrendLine({ data, color = '#10b981', onClickPoint }) {
+function TrendLine({ data, color = '#10b981', onClickPoint, format }) {
   const [hov, setHov] = useState(null)
   const W = 100, H = 55
   const max = Math.max(...data.map(d => d.value), 1)
@@ -120,12 +120,12 @@ function TrendLine({ data, color = '#10b981', onClickPoint }) {
     <div style={{ position: 'relative' }}>
       <svg viewBox={`0 0 100 ${H}`} style={{ width: '100%', height: 110, overflow: 'visible' }} preserveAspectRatio="none">
         <defs>
-          <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`tg-${color}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity=".25" />
             <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
-        <polygon points={area} fill="url(#tg)" />
+        <polygon points={area} fill={`url(#tg-${color})`} />
         <polyline points={poly} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         {pts.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r={hov === i ? 2.5 : 1.5} fill={color}
@@ -140,7 +140,7 @@ function TrendLine({ data, color = '#10b981', onClickPoint }) {
       </div>
       {hov !== null && (
         <div style={{ position: 'absolute', top: 0, left: `${pts[hov].x}%`, transform: 'translateX(-50%)', background: '#1e1b4b', border: '1px solid rgba(255,255,255,.12)', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, color, pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 10 }}>
-          {data[hov].label}: {data[hov].value}
+          {data[hov].label}: {format ? format(data[hov].value) : data[hov].value}
         </div>
       )}
     </div>
@@ -342,6 +342,20 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
     return months
   }, [cerrados])
 
+  const tendenciaIngresos = useMemo(() => {
+    const now = new Date(), months = []
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      months.push({ year: d.getFullYear(), month: d.getMonth(), label: MESES[d.getMonth()], value: 0, leads: [] })
+    }
+    cerrados.forEach(l => {
+      const d = new Date(l.fecha + 'T12:00:00')
+      const m = months.find(x => x.year === d.getFullYear() && x.month === d.getMonth())
+      if (m) { m.value += Number(l.monto_cerrado) || 0; m.leads.push(l) }
+    })
+    return months
+  }, [cerrados])
+
   const recurrentes = useMemo(() => {
     const m = {}
     leads.filter(l => l.telefono && l.telefono.length > 4 && l.telefono !== '123' && l.telefono !== '321').forEach(l => {
@@ -444,6 +458,9 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
           <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, margin: '8px 0 0' }}>
             Fin de semana = <strong style={{ color: '#a855f7' }}>{pctSab + pctDom}%</strong> del negocio
           </p>
+        </Card>
+        <Card title="Ingresos por mes · últimos 12 meses" icon="💰" wide>
+          <TrendLine data={tendenciaIngresos} color="#f59e0b" format={v => `$${Math.round(v/1000)}k`} onClickPoint={d => d.leads?.length && setFiltroActivo({ titulo: `💰 ${d.label} · ${d.leads.length} eventos`, leads: d.leads.sort((a,b) => (Number(b.monto_cerrado)||0)-(Number(a.monto_cerrado)||0)) })} />
         </Card>
         <Card title="Eventos por mes · últimos 12 meses" icon="📈" wide>
           <TrendLine data={tendencia} color="#10b981" onClickPoint={d => d.leads?.length && setFiltroActivo({ titulo: `📅 ${d.label} · ${d.leads.length} eventos`, leads: d.leads })} />
