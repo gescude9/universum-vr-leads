@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { money } from '../lib/helpers'
 
 const DIAS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
@@ -181,6 +182,94 @@ function Card({ title, icon, children, wide }) {
   )
 }
 
+function VendedorPerf({ vendedores, money }) {
+  const [sel, setSel] = useState(null) // { vid, mi }
+
+  const toggle = (vid, mi) => {
+    if (sel && sel.vid === vid && sel.mi === mi) setSel(null)
+    else setSel({ vid, mi })
+  }
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+      {vendedores.map((v) => {
+        const maxVal = Math.max(...v.porMes.map(m => m.value), 1)
+        const selMes = sel && sel.vid === v.id ? v.porMes[sel.mi] : null
+        return (
+          <div key={v.id} style={{ background: 'rgba(255,255,255,.03)', border: `1px solid ${v.color}33`, borderRadius: 12, padding: '16px' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: v.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', color: v.color, fontWeight: 800, fontSize: 14, fontFamily: 'Space Grotesk,sans-serif' }}>
+                  {v.nombre.charAt(0)}
+                </div>
+                <span style={{ fontFamily: 'Space Grotesk,sans-serif', fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{v.nombre}</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: 'Space Grotesk,sans-serif', fontSize: 16, fontWeight: 800, color: v.color }}>${Math.round(v.totalAno).toLocaleString()}</div>
+                <div style={{ fontSize: 10, color: 'var(--muted)' }}>{v.totalEventos} eventos · ${Math.round(v.totalComision).toLocaleString()} comisión</div>
+              </div>
+            </div>
+
+            {/* Barras clicables */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 60 }}>
+              {v.porMes.map((m, mi) => {
+                const isActive = sel && sel.vid === v.id && sel.mi === mi
+                return (
+                  <div key={mi}
+                    onClick={() => m.eventos > 0 && toggle(v.id, mi)}
+                    style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', cursor: m.eventos > 0 ? 'pointer' : 'default' }}
+                    title={`${m.label}: $${Math.round(m.value).toLocaleString()} · ${m.eventos} eventos`}>
+                    <div style={{
+                      width: '80%',
+                      height: `${Math.max((m.value / maxVal) * 100, m.value > 0 ? 4 : 0)}%`,
+                      background: isActive ? v.color : v.color + 'bb',
+                      borderRadius: isActive ? '3px 3px 0 0' : '3px 3px 0 0',
+                      outline: isActive ? `2px solid ${v.color}` : 'none',
+                      transition: 'all .2s',
+                    }} />
+                    <span style={{ fontSize: 8, color: isActive ? v.color : 'var(--muted)', fontWeight: isActive ? 700 : 400, marginTop: 2 }}>{m.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Valores debajo */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+              {v.porMes.map((m, mi) => (
+                <span key={mi} style={{ flex: 1, fontSize: 8, color: m.value > 0 ? v.color : 'transparent', textAlign: 'center', fontWeight: 700 }}>
+                  {m.value > 0 ? `$${(m.value/1000).toFixed(0)}k` : '·'}
+                </span>
+              ))}
+            </div>
+
+            {/* Desglose al hacer click */}
+            {selMes && selMes.leadsDetalle && selMes.leadsDetalle.length > 0 && (
+              <div style={{ marginTop: 12, borderTop: `1px solid ${v.color}33`, paddingTop: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: v.color, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                  {selMes.label} · {selMes.eventos} evento{selMes.eventos !== 1 ? 's' : ''} · ${Math.round(selMes.value).toLocaleString()}
+                </div>
+                {selMes.leadsDetalle.map(l => (
+                  <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{l.nombre}</div>
+                      <div style={{ fontSize: 10, color: 'var(--muted)' }}>{l.fecha || ''} {l.hora ? '· ' + l.hora.slice(0,5) : ''} {l.personas ? '· ' + l.personas + 'p' : ''}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)' }}>{money(l.monto_cerrado)}</div>
+                      <div style={{ fontSize: 10, color: 'var(--good)' }}>{money(l.comision)} com.</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function Analitica({ leads = [], vendedores = [], prereservas = [] }) {
   const cerrados = useMemo(() =>
     leads.filter(l => l.estado === 'Cerrado' && l.fecha && l.hora), [leads])
@@ -280,6 +369,7 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
           value: totalLeads + totalPre,
           eventos: leadsM.length,
           comision: leadsM.reduce((s, l) => s + (Number(l.comision) || 0), 0),
+          leadsDetalle: leadsM.sort((a,b) => (a.fecha||'').localeCompare(b.fecha||'')),
         }
       })
       const totalAno = porMes.reduce((s, m) => s + m.value, 0)
@@ -370,47 +460,7 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
         {/* Performance vendedores */}
         {perfVendedores.length > 0 && (
           <Card title="Performance por vendedor · últimos 6 meses" icon="🏆" wide>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-              {perfVendedores.map((v, vi) => {
-                const maxVal = Math.max(...v.porMes.map(m => m.value), 1)
-                return (
-                  <div key={v.id} style={{ background: 'rgba(255,255,255,.03)', border: `1px solid ${v.color}33`, borderRadius: 12, padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: v.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', color: v.color, fontWeight: 800, fontSize: 14, fontFamily: 'Space Grotesk,sans-serif' }}>
-                          {v.nombre.charAt(0)}
-                        </div>
-                        <span style={{ fontFamily: 'Space Grotesk,sans-serif', fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{v.nombre}</span>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontFamily: 'Space Grotesk,sans-serif', fontSize: 16, fontWeight: 800, color: v.color }}>${Math.round(v.totalAno).toLocaleString()}</div>
-                        <div style={{ fontSize: 10, color: 'var(--muted)' }}>{v.totalEventos} eventos · ${Math.round(v.totalComision).toLocaleString()} comisión</div>
-                      </div>
-                    </div>
-                    {/* Mini barras por mes */}
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 60 }}>
-                      {v.porMes.map((m, mi) => {
-                        return (
-                          <div key={mi} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}
-                            title={`${m.label}: $${Math.round(m.value).toLocaleString()} · ${m.eventos} eventos`}>
-                            <div style={{ width: '80%', height: `${Math.max((m.value / maxVal) * 100, m.value > 0 ? 4 : 0)}%`, background: v.color, borderRadius: '3px 3px 0 0', opacity: 0.85, transition: 'height .5s cubic-bezier(.4,0,.2,1)' }} />
-                            <span style={{ fontSize: 8, color: 'var(--muted)', marginTop: 2 }}>{m.label}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    {/* Meses con valores */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                      {v.porMes.map((m, mi) => (
-                        <span key={mi} style={{ flex: 1, fontSize: 8, color: m.value > 0 ? v.color : 'transparent', textAlign: 'center', fontWeight: 700 }}>
-                          {m.value > 0 ? `$${(m.value/1000).toFixed(0)}k` : '·'}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <VendedorPerf vendedores={perfVendedores} money={money} />
           </Card>
         )}
 
