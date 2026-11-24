@@ -365,10 +365,11 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
       const esMesActual = yr === hoyAno && mo === hoyMes
       const esManualHistorico = totalManual > 0 && !esMesActual
 
-      // leads del mes
+      // leads del mes — usar fecha_venta igual que Reportes
       const leadsDelMes = cerrados.filter(l => {
-        const d2 = new Date(l.fecha + 'T12:00:00')
-        return d2.getFullYear() === yr && d2.getMonth() === mo
+        const fv = l.fecha_venta || l.fecha
+        if (!fv) return false
+        return parseInt(fv.slice(0,4)) === yr && parseInt(fv.slice(5,7)) - 1 === mo
       })
       // extras del mes
       const extrasDelMes = extras.filter(e => e.ano === yr && e.mes === mesNum)
