@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
+import { supabase } from '../supabaseClient'
 import { money } from '../lib/helpers'
 
 const DIAS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
@@ -277,7 +278,12 @@ function VendedorPerf({ vendedores, money }) {
   )
 }
 
-export default function Analitica({ leads = [], vendedores = [], prereservas = [] }) {
+export default function Analitica({ leads = [], vendedores = [], prereservas = [], extras = [] }) {
+  const [ventasManuales, setVentasManuales] = useState([])
+  useEffect(() => {
+    supabase.from('ventas_manuales').select('*').then(({ data }) => { if (data) setVentasManuales(data) })
+  }, [])
+
   const cerrados = useMemo(() =>
     leads.filter(l => l.estado === 'Cerrado' && l.fecha && l.hora), [leads])
 
@@ -348,13 +354,38 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
       months.push({ year: d.getFullYear(), month: d.getMonth(), label: MESES[d.getMonth()], value: 0, leads: [] })
     }
+    // leads cerrados
     cerrados.forEach(l => {
       const d = new Date(l.fecha + 'T12:00:00')
       const m = months.find(x => x.year === d.getFullYear() && x.month === d.getMonth())
       if (m) { m.value += Number(l.monto_cerrado) || 0; m.leads.push(l) }
     })
+    // extras
+    extras.forEach(e => {
+      const m = months.find(x => x.year === e.ano && x.month === (e.mes - 1))
+      if (m) m.value += Number(e.monto) || 0
+    })
+    // prereservas
+    prereservas.forEach(p => {
+      const m = months.find(x => x.year === p.ano && x.month === (p.mes - 1))
+      if (m) m.value += Number(p.monto) || 0
+    })
+    // ventas manuales (solo cuando no hay leads del mes — igual que Reportes)
+    ventasManuales.forEach(v => {
+      const m = months.find(x => x.year === v.ano && x.month === (v.mes - 1))
+      if (m) {
+        // en Reportes, el mes manual reemplaza el total de leads por el totalManual
+        // restamos lo que pusimos de leads y sumamos el totalManual
+        const leadsDelMes = cerrados.filter(l => {
+          const d = new Date(l.fecha + 'T12:00:00')
+          return d.getFullYear() === v.ano && d.getMonth() === (v.mes - 1)
+        })
+        const totalLeads = leadsDelMes.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
+        m.value = m.value - totalLeads + Number(v.total)
+      }
+    })
     return months
-  }, [cerrados])
+  }, [cerrados, extras, prereservas, ventasManuales])
 
   const recurrentes = useMemo(() => {
     const m = {}

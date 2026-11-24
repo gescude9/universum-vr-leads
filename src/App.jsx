@@ -443,7 +443,7 @@ export default function App() {
             />
           )}
           {view === 'analitica' && (
-            <Analitica leads={leads} vendedores={vendedores} prereservas={prereservas} />
+            <Analitica leads={leads} vendedores={vendedores} prereservas={prereservas} extras={extras} />
           )}
         </main>
       </div>
