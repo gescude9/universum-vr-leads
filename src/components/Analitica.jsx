@@ -349,41 +349,46 @@ export default function Analitica({ leads = [], vendedores = [], prereservas = [
   }, [cerrados])
 
   const tendenciaIngresos = useMemo(() => {
-    const now = new Date(), months = []
+    const now = new Date()
+    const hoyAno = now.getFullYear(), hoyMes = now.getMonth()
+    const months = []
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      months.push({ year: d.getFullYear(), month: d.getMonth(), label: MESES[d.getMonth()], value: 0, leads: [] })
+      months.push({ year: d.getFullYear(), month: d.getMonth(), label: MESES[d.getMonth()], value: 0, leads: [], esManual: false })
     }
-    // leads cerrados
+    // Marcar meses manuales y ponerles el totalManual
+    ventasManuales.forEach(v => {
+      const m = months.find(x => x.year === v.ano && x.month === (v.mes - 1))
+      if (!m) return
+      const esMesActual = v.ano === hoyAno && (v.mes - 1) === hoyMes
+      if (esMesActual) {
+        // Mes actual manual: leads del sistema + totalManual + extras + prereservas
+        m.esManual = false // tratamos normal, el totalManual ya está sumado abajo
+        m._manualExtra = Number(v.total) // se suma al final
+      } else {
+        // Mes histórico manual: solo totalManual (no leads del sistema)
+        m.esManual = true
+        m.value = Number(v.total)
+      }
+    })
+    // leads cerrados (solo para meses NO histórico-manual)
     cerrados.forEach(l => {
       const d = new Date(l.fecha + 'T12:00:00')
       const m = months.find(x => x.year === d.getFullYear() && x.month === d.getMonth())
-      if (m) { m.value += Number(l.monto_cerrado) || 0; m.leads.push(l) }
+      if (m && !m.esManual) { m.value += Number(l.monto_cerrado) || 0; m.leads.push(l) }
     })
-    // extras
+    // extras (todos los meses)
     extras.forEach(e => {
       const m = months.find(x => x.year === e.ano && x.month === (e.mes - 1))
       if (m) m.value += Number(e.monto) || 0
     })
-    // prereservas
+    // prereservas (todos los meses)
     prereservas.forEach(p => {
       const m = months.find(x => x.year === p.ano && x.month === (p.mes - 1))
       if (m) m.value += Number(p.monto) || 0
     })
-    // ventas manuales (solo cuando no hay leads del mes — igual que Reportes)
-    ventasManuales.forEach(v => {
-      const m = months.find(x => x.year === v.ano && x.month === (v.mes - 1))
-      if (m) {
-        // en Reportes, el mes manual reemplaza el total de leads por el totalManual
-        // restamos lo que pusimos de leads y sumamos el totalManual
-        const leadsDelMes = cerrados.filter(l => {
-          const d = new Date(l.fecha + 'T12:00:00')
-          return d.getFullYear() === v.ano && d.getMonth() === (v.mes - 1)
-        })
-        const totalLeads = leadsDelMes.reduce((s, l) => s + (Number(l.monto_cerrado) || 0), 0)
-        m.value = m.value - totalLeads + Number(v.total)
-      }
-    })
+    // mes actual manual: sumar el totalManual encima
+    months.forEach(m => { if (m._manualExtra) m.value += m._manualExtra })
     return months
   }, [cerrados, extras, prereservas, ventasManuales])
 
